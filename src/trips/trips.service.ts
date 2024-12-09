@@ -19,4 +19,13 @@ export class TripsService {
   list(): Trip[] {
     return this.trips;
   }
+
+  update(id: string, updateData: Partial<Trip>): Trip | undefined {
+    const tripIndex = this.trips.findIndex((trip) => trip.id === id);
+    if (tripIndex === -1) return undefined;
+
+    const updatedTrip = { ...this.trips[tripIndex], ...updateData };
+    this.trips[tripIndex] = updatedTrip;
+    return updatedTrip;
+  }
 }

@@ -32,19 +32,34 @@ describe('TripsService', () => {
     expect(createdTrip.id).toBeDefined();
   });
 
+  it('should find a trip by ID', () => {
+    const trip = service.create({
+      boatId: 'boat123',
+      captainId: 'captain123',
+      ownerId: 'owner123',
+      startTime: new Date(),
+      endTime: new Date(Date.now() + 3600000), // 1 hour later
+      status: 'PENDING',
+    });
+
+    const foundTrip = service.findOne(trip.id);
+    expect(foundTrip).toEqual(trip);
+  });
+
   it('should list all trips', () => {
     service.create({
-      boatId: 'boat1',
-      captainId: 'captain1',
-      ownerId: 'owner1',
+      boatId: 'boat123',
+      captainId: 'captain123',
+      ownerId: 'owner123',
       startTime: new Date(),
       endTime: new Date(),
       status: 'PENDING',
     });
+
     service.create({
-      boatId: 'boat2',
-      captainId: 'captain2',
-      ownerId: 'owner2',
+      boatId: 'boat456',
+      captainId: 'captain456',
+      ownerId: 'owner456',
       startTime: new Date(),
       endTime: new Date(),
       status: 'PENDING',
@@ -54,16 +69,17 @@ describe('TripsService', () => {
     expect(trips.length).toBe(2);
   });
 
-  it('should find a trip by ID', () => {
+  it('should update a trip status', () => {
     const trip = service.create({
-      boatId: 'boat1',
-      captainId: 'captain1',
-      ownerId: 'owner1',
+      boatId: 'boat123',
+      captainId: 'captain123',
+      ownerId: 'owner123',
       startTime: new Date(),
       endTime: new Date(),
       status: 'PENDING',
     });
-    const foundTrip = service.findOne(trip.id);
-    expect(foundTrip).toEqual(trip);
+
+    const updatedTrip = service.update(trip.id, { status: 'ONGOING' });
+    expect(updatedTrip?.status).toBe('ONGOING');
   });
 });
