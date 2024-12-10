@@ -31,6 +31,22 @@ describe('UsersService', () => {
     expect(createdUser.id).toBeDefined();
   });
 
+  it('should not allow duplicate email signups', () => {
+    const user: Partial<User> = {
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+      phoneNumber: '123-456-7890',
+      role: 'CAPTAIN',
+    };
+
+    service.create(user);
+
+    expect(() => service.create(user)).toThrowError(
+      `User with email ${user.email} already exists`,
+    );
+  });
+
   it('should find a user by ID', () => {
     const user = service.create({
       firstName: 'Jane',
@@ -59,6 +75,12 @@ describe('UsersService', () => {
     expect(updatedUser?.phoneNumber).toBe('111-222-3333');
   });
 
+  it('should throw an error if updating a non-existent user', () => {
+    expect(() =>
+      service.update('non-existent-id', { phoneNumber: '111-222-3333' }),
+    ).toThrowError('User not found');
+  });
+
   it('should delete a user', () => {
     const user = service.create({
       firstName: 'Jane',
@@ -69,7 +91,15 @@ describe('UsersService', () => {
     });
 
     const result = service.delete(user.id);
-    expect(result).toBe(true);
-    expect(service.findOne(user.id)).toBeUndefined();
+    expect(result).toBe(true); // Successful deletion
+    expect(() => service.findOne(user.id)).toThrowError(
+      `User with ID ${user.id} not found`,
+    ); // Confirm user no longer exists
+  });
+
+  it('should throw an error if deleting a non-existent user', () => {
+    expect(() => service.delete('non-existent-id')).toThrowError(
+      'User not found',
+    );
   });
 });

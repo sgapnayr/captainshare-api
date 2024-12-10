@@ -1,5 +1,12 @@
-// src/reviews/reviews.controller.ts
-import { Controller, Post, Get, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Query,
+  Param,
+  Body,
+  NotFoundException,
+} from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { Review } from './entities/review.entity';
 
@@ -12,13 +19,32 @@ export class ReviewsController {
     return this.reviewsService.create(review);
   }
 
+  @Get()
+  findByCaptain(@Query('captainId') captainId: string): Review[] {
+    const reviews = this.reviewsService.findByCaptain(captainId);
+    if (!reviews.length) {
+      throw new NotFoundException(
+        `No reviews found for Captain ID ${captainId}`,
+      );
+    }
+    return reviews;
+  }
+
   @Get('trip/:tripId')
   findByTrip(@Param('tripId') tripId: string): Review[] {
-    return this.reviewsService.findByTrip(tripId);
+    const reviews = this.reviewsService.findByTrip(tripId);
+    if (!reviews.length) {
+      throw new NotFoundException(`No reviews found for Trip ID ${tripId}`);
+    }
+    return reviews;
   }
 
   @Get('user/:userId')
   findByUser(@Param('userId') userId: string): Review[] {
-    return this.reviewsService.findByUser(userId);
+    const reviews = this.reviewsService.findByUser(userId);
+    if (!reviews.length) {
+      throw new NotFoundException(`No reviews found for User ID ${userId}`);
+    }
+    return reviews;
   }
 }

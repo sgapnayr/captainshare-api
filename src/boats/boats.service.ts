@@ -7,7 +7,21 @@ export class BoatsService {
   private boats: Boat[] = []; // In-memory storage
 
   create(boat: Partial<Boat>): Boat {
-    const newBoat: Boat = { ...boat, id: Date.now().toString() } as Boat; // Generate an ID
+    if (!boat.name || !boat.location || !boat.rateWillingToPay) {
+      throw new Error('Name, location, and rateWillingToPay are required.');
+    }
+
+    const duplicateBoat = this.boats.find(
+      (b) =>
+        b.name === boat.name &&
+        b.ownerIds.some((id) => boat.ownerIds?.includes(id)),
+    );
+
+    if (duplicateBoat) {
+      throw new Error('Boat with the same name already exists for this owner.');
+    }
+
+    const newBoat: Boat = { ...boat, id: Date.now().toString() } as Boat;
     this.boats.push(newBoat);
     return newBoat;
   }
@@ -26,5 +40,20 @@ export class BoatsService {
 
     this.boats.splice(boatIndex, 1);
     return true;
+  }
+
+  filterByCaptain(
+    captainCertifications: string[],
+    captainLicenses: string[],
+  ): Boat[] {
+    return this.boats.filter((boat) => {
+      const certsMatch = boat.certificationsRequired.every((cert) =>
+        captainCertifications.includes(cert),
+      );
+      const licensesMatch = boat.licenseRequired.every((license) =>
+        captainLicenses.includes(license),
+      );
+      return certsMatch && licensesMatch;
+    });
   }
 }

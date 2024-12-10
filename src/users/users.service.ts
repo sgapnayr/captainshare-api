@@ -1,4 +1,3 @@
-// src/users/users.service.ts
 import { Injectable } from '@nestjs/common';
 import { User } from './entities/user.entity';
 
@@ -7,22 +6,34 @@ export class UsersService {
   private users: User[] = []; // In-memory storage
 
   create(user: Partial<User>): User {
+    const existingUser = this.users.find((u) => u.email === user.email);
+    if (existingUser) {
+      throw new Error(`User with email ${user.email} already exists`);
+    }
+
     const newUser: User = {
       ...user,
       id: Date.now().toString(),
       isGovernmentIdVerified: false,
-    } as User; // Generate an ID
+    } as User;
+
     this.users.push(newUser);
     return newUser;
   }
 
-  findOne(id: string): User | undefined {
-    return this.users.find((user) => user.id === id);
+  findOne(id: string): User {
+    const user = this.users.find((user) => user.id === id);
+    if (!user) {
+      throw new Error(`User with ID ${id} not found`);
+    }
+    return user;
   }
 
-  update(id: string, updateData: Partial<User>): User | undefined {
+  update(id: string, updateData: Partial<User>): User {
     const userIndex = this.users.findIndex((user) => user.id === id);
-    if (userIndex === -1) return undefined;
+    if (userIndex === -1) {
+      throw new Error('User not found');
+    }
 
     const updatedUser = { ...this.users[userIndex], ...updateData };
     this.users[userIndex] = updatedUser;
@@ -31,9 +42,15 @@ export class UsersService {
 
   delete(id: string): boolean {
     const userIndex = this.users.findIndex((user) => user.id === id);
-    if (userIndex === -1) return false;
+    if (userIndex === -1) {
+      throw new Error('User not found');
+    }
 
     this.users.splice(userIndex, 1);
     return true;
+  }
+
+  list(): User[] {
+    return this.users; // Returns all users
   }
 }

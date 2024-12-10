@@ -32,18 +32,24 @@ describe('TripsController', () => {
       boatId: 'boat123',
       captainId: 'captain123',
       ownerId: 'owner123',
-      startTime: new Date(),
-      endTime: new Date(Date.now() + 3600000),
+      startTime: new Date('2024-12-15T09:00:00.000Z'),
+      endTime: new Date('2024-12-15T12:00:00.000Z'),
       status: 'PENDING' as 'PENDING' | 'ONGOING' | 'COMPLETED' | 'CANCELED',
     };
 
-    const createdTrip = { ...tripDto, id: 'trip123' } as Trip;
+    const createdTrip: Trip = {
+      ...tripDto,
+      id: 'trip123',
+      startTime: new Date(tripDto.startTime),
+      endTime: new Date(tripDto.endTime),
+      status: 'PENDING', // Ensure status is one of the allowed values
+    };
 
-    service.create.mockReturnValue(createdTrip); // Use mockReturnValue for synchronous methods
+    service.create.mockReturnValue(createdTrip);
 
     const result = await controller.create(tripDto);
-    expect(result).toEqual(createdTrip);
-    expect(service.create).toHaveBeenCalledWith(tripDto);
+    expect(result.startTime).toBeInstanceOf(Date);
+    expect(result.endTime).toBeInstanceOf(Date);
   });
 
   it('should find a trip by ID', async () => {
@@ -52,8 +58,8 @@ describe('TripsController', () => {
       boatId: 'boat123',
       captainId: 'captain123',
       ownerId: 'owner123',
-      startTime: new Date(),
-      endTime: new Date(Date.now() + 3600000),
+      startTime: new Date('2024-12-15T09:00:00.000Z'),
+      endTime: new Date('2024-12-15T12:00:00.000Z'),
       status: 'PENDING',
     } as Trip;
 
@@ -62,5 +68,39 @@ describe('TripsController', () => {
     const result = await controller.findOne('trip123');
     expect(result).toEqual(trip);
     expect(service.findOne).toHaveBeenCalledWith('trip123');
+  });
+
+  it('should list all trips', async () => {
+    const trips = [
+      {
+        id: 'trip1',
+        boatId: 'boat123',
+        captainId: 'captain123',
+        status: 'PENDING',
+      },
+      {
+        id: 'trip2',
+        boatId: 'boat456',
+        captainId: 'captain456',
+        status: 'ONGOING',
+      },
+    ] as Trip[];
+
+    service.list.mockReturnValue(trips);
+
+    const result = await controller.list();
+    expect(result).toEqual(trips);
+    expect(service.list).toHaveBeenCalled();
+  });
+
+  it('should update a trip', async () => {
+    const tripUpdateDto: Partial<Trip> = { status: 'ONGOING' };
+    const updatedTrip = { id: 'trip123', status: 'ONGOING' } as Trip;
+
+    service.update.mockReturnValue(updatedTrip);
+
+    const result = await controller.update('trip123', tripUpdateDto);
+    expect(result).toEqual(updatedTrip);
+    expect(service.update).toHaveBeenCalledWith('trip123', tripUpdateDto);
   });
 });

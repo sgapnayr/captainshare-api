@@ -24,12 +24,33 @@ describe('BoatsService', () => {
       capacity: 10,
       location: 'Miami',
       licenseRequired: ['USCG'],
+      certificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner123'],
+      rateWillingToPay: 100,
     };
 
     const createdBoat = service.create(boat);
     expect(createdBoat).toMatchObject(boat);
     expect(createdBoat.id).toBeDefined();
+  });
+
+  it('should throw an error when creating a duplicate boat for the same owner', () => {
+    const boat: Partial<Boat> = {
+      name: 'Sea Breeze',
+      type: 'Yacht',
+      capacity: 10,
+      location: 'Miami',
+      licenseRequired: ['USCG'],
+      certificationsRequired: ['AdvancedSailing'],
+      ownerIds: ['owner123'],
+      rateWillingToPay: 100,
+    };
+
+    service.create(boat);
+
+    expect(() => service.create(boat)).toThrowError(
+      'Boat with the same name already exists for this owner.',
+    );
   });
 
   it('should find a boat by ID', () => {
@@ -39,7 +60,9 @@ describe('BoatsService', () => {
       capacity: 6,
       location: 'San Diego',
       licenseRequired: ['USCG'],
+      certificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner456'],
+      rateWillingToPay: 200,
     });
 
     const foundBoat = service.findOne(boat.id);
@@ -52,14 +75,21 @@ describe('BoatsService', () => {
       type: 'Yacht',
       capacity: 10,
       location: 'Miami',
+      licenseRequired: ['USCG'],
+      certificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner123'],
+      rateWillingToPay: 150,
     });
+
     service.create({
       name: 'Boat 2',
       type: 'Fishing Boat',
       capacity: 6,
       location: 'San Diego',
+      licenseRequired: ['USCG'],
+      certificationsRequired: ['ExpertSailing'],
       ownerIds: ['owner456'],
+      rateWillingToPay: 250,
     });
 
     const boats = service.list();
@@ -72,11 +102,42 @@ describe('BoatsService', () => {
       type: 'Fishing Boat',
       capacity: 8,
       location: 'Key West',
+      licenseRequired: ['USCG'],
+      certificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner789'],
+      rateWillingToPay: 180,
     });
 
     const result = service.delete(boat.id);
     expect(result).toBe(true);
     expect(service.findOne(boat.id)).toBeUndefined();
+  });
+
+  it('should filter boats by captain qualifications', () => {
+    service.create({
+      name: 'Sea Breeze',
+      type: 'Yacht',
+      capacity: 10,
+      location: 'Miami',
+      licenseRequired: ['USCG'],
+      certificationsRequired: ['AdvancedSailing'],
+      ownerIds: ['owner1'],
+      rateWillingToPay: 100,
+    });
+
+    service.create({
+      name: 'Ocean Explorer',
+      type: 'Fishing Boat',
+      capacity: 6,
+      location: 'San Diego',
+      licenseRequired: ['USCG', 'ProSailing'],
+      certificationsRequired: ['ExpertSailing'],
+      ownerIds: ['owner2'],
+      rateWillingToPay: 150,
+    });
+
+    const result = service.filterByCaptain(['AdvancedSailing'], ['USCG']);
+    expect(result.length).toBe(1);
+    expect(result[0].name).toBe('Sea Breeze');
   });
 });

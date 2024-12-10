@@ -1,13 +1,4 @@
-// src/trips/trips.controller.ts
-import {
-  Controller,
-  Post,
-  Get,
-  Patch,
-  Body,
-  Param,
-  NotFoundException,
-} from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, Param } from '@nestjs/common';
 import { TripsService } from './trips.service';
 import { Trip } from './entities/trip.entity';
 
@@ -16,7 +7,12 @@ export class TripsController {
   constructor(private readonly tripsService: TripsService) {}
 
   @Post()
-  create(@Body() trip: Partial<Trip>): Trip {
+  create(@Body() tripDto: Partial<Trip>): Trip {
+    const trip = {
+      ...tripDto,
+      startTime: new Date(tripDto.startTime),
+      endTime: new Date(tripDto.endTime),
+    };
     return this.tripsService.create(trip);
   }
 
@@ -35,10 +31,6 @@ export class TripsController {
     @Param('id') id: string,
     @Body() updateData: Partial<Trip>,
   ): Trip | undefined {
-    const updatedTrip = this.tripsService.update(id, updateData);
-    if (!updatedTrip) {
-      throw new NotFoundException(`Trip with ID ${id} not found`);
-    }
-    return updatedTrip;
+    return this.tripsService.update(id, updateData);
   }
 }

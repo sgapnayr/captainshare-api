@@ -1,4 +1,3 @@
-// src/reviews/reviews.service.ts
 import { Injectable } from '@nestjs/common';
 import { Review } from './entities/review.entity';
 
@@ -22,5 +21,13 @@ export class ReviewsService {
 
   findByUser(userId: string): Review[] {
     return this.reviews.filter((review) => review.revieweeId === userId);
+  }
+
+  // Corrected findByCaptain method
+  findByCaptain(captainId: string): Review[] {
+    return this.reviews.filter(
+      (review) =>
+        review.revieweeId === captainId && review.revieweeRole === 'CAPTAIN',
+    );
   }
 }

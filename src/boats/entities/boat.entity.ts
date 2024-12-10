@@ -1,10 +1,11 @@
-// src/boats/entities/boat.entity.ts
 export class Boat {
-  id: string; // Unique ID
+  id: string;
   name: string;
-  type: string; // e.g., "Yacht", "Fishing Boat"
+  type: string;
   capacity: number;
-  licenseRequired: string[]; // List of licenses needed to operate the boat
-  location: string; // Where the boat is docked
-  ownerIds: string[]; // IDs of owners
+  location: string;
+  licenseRequired: string[];
+  certificationsRequired: string[]; // e.g., ['USCG', 'AdvancedSailing']
+  ownerIds: string[];
+  rateWillingToPay: number; // Rate owners are willing to pay
 }

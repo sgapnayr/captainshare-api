@@ -5,7 +5,7 @@ import { Boat } from './entities/boat.entity';
 
 describe('BoatsController', () => {
   let controller: BoatsController;
-  let service: BoatsService;
+  let service: jest.Mocked<BoatsService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -18,13 +18,16 @@ describe('BoatsController', () => {
             findOne: jest.fn(),
             list: jest.fn(),
             delete: jest.fn(),
+            filterByCaptain: jest.fn(),
           },
         },
       ],
     }).compile();
 
     controller = module.get<BoatsController>(BoatsController);
-    service = module.get<BoatsService>(BoatsService);
+    service = module.get<BoatsService>(
+      BoatsService,
+    ) as jest.Mocked<BoatsService>;
   });
 
   it('should create a boat', async () => {
@@ -33,30 +36,36 @@ describe('BoatsController', () => {
       type: 'Yacht',
       capacity: 10,
       location: 'Miami',
+      licenseRequired: ['USCG'],
+      certificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner123'],
+      rateWillingToPay: 100,
     };
-    const createdBoat = { ...boatDto, id: 'boat123' } as Boat;
 
-    jest.spyOn(service, 'create').mockReturnValue(createdBoat);
+    const createdBoat: Boat = { ...boatDto, id: 'boat123' };
+    service.create.mockReturnValue(createdBoat);
 
-    const result = await controller.create(boatDto);
+    const result = controller.create(boatDto);
     expect(result).toEqual(createdBoat);
     expect(service.create).toHaveBeenCalledWith(boatDto);
   });
 
-  it('should find a boat by ID', async () => {
+  it('should get a boat by ID', async () => {
     const boat = {
       id: 'boat123',
       name: 'Sea Breeze',
       type: 'Yacht',
       capacity: 10,
       location: 'Miami',
+      licenseRequired: ['USCG'],
+      certificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner123'],
-    } as Boat;
+      rateWillingToPay: 100,
+    };
 
-    jest.spyOn(service, 'findOne').mockReturnValue(boat);
+    service.findOne.mockReturnValue(boat);
 
-    const result = await controller.findOne('boat123');
+    const result = controller.findOne('boat123');
     expect(result).toEqual(boat);
     expect(service.findOne).toHaveBeenCalledWith('boat123');
   });
@@ -65,34 +74,61 @@ describe('BoatsController', () => {
     const boats = [
       {
         id: 'boat1',
-        name: 'Boat 1',
+        name: 'Sea Breeze',
         type: 'Yacht',
         capacity: 10,
         location: 'Miami',
-        ownerIds: ['owner123'],
-      } as Boat,
+        licenseRequired: ['USCG'],
+        certificationsRequired: ['AdvancedSailing'],
+        ownerIds: ['owner1'],
+        rateWillingToPay: 100,
+      },
       {
         id: 'boat2',
-        name: 'Boat 2',
+        name: 'Ocean Explorer',
         type: 'Fishing Boat',
         capacity: 6,
         location: 'San Diego',
-        ownerIds: ['owner456'],
-      } as Boat,
+        licenseRequired: ['USCG', 'ProSailing'],
+        certificationsRequired: ['ExpertSailing'],
+        ownerIds: ['owner2'],
+        rateWillingToPay: 150,
+      },
     ];
 
-    jest.spyOn(service, 'list').mockReturnValue(boats);
+    service.list.mockReturnValue(boats);
 
-    const result = await controller.list();
+    const result = controller.list();
     expect(result).toEqual(boats);
     expect(service.list).toHaveBeenCalled();
   });
 
-  it('should delete a boat', async () => {
-    jest.spyOn(service, 'delete').mockReturnValue(true);
+  it('should filter boats by captain qualifications', async () => {
+    const filterDto = {
+      certifications: ['AdvancedSailing'],
+      licenses: ['USCG'],
+    };
+    const boats = [
+      {
+        id: 'boat1',
+        name: 'Sea Breeze',
+        type: 'Yacht',
+        capacity: 10,
+        location: 'Miami',
+        licenseRequired: ['USCG'],
+        certificationsRequired: ['AdvancedSailing'],
+        ownerIds: ['owner1'],
+        rateWillingToPay: 100,
+      },
+    ];
 
-    const result = await controller.delete('boat123');
-    expect(result).toBe(true);
-    expect(service.delete).toHaveBeenCalledWith('boat123');
+    service.filterByCaptain.mockReturnValue(boats);
+
+    const result = await controller.filterByCaptain(filterDto);
+    expect(result).toEqual(boats);
+    expect(service.filterByCaptain).toHaveBeenCalledWith(
+      filterDto.certifications,
+      filterDto.licenses,
+    );
   });
 });

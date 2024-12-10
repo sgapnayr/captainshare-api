@@ -26,4 +26,14 @@ export class BoatsController {
   delete(@Param('id') id: string): boolean {
     return this.boatsService.delete(id);
   }
+
+  @Post('filter')
+  filterByCaptain(
+    @Body() filterDto: { certifications: string[]; licenses: string[] },
+  ): Boat[] {
+    return this.boatsService.filterByCaptain(
+      filterDto.certifications,
+      filterDto.licenses,
+    );
+  }
 }
