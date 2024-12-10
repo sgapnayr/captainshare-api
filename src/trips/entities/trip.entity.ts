@@ -1,10 +1,20 @@
 // src/trips/entities/trip.entity.ts
 export class Trip {
-  id: string; // Unique ID
-  boatId: string; // Reference to a Boat
-  captainId: string; // Reference to a Captain
-  ownerId: string; // Reference to an Owner
-  startTime: Date; // Always use Date for time-related fields
-  endTime: Date; // Always use Date for time-related fields
-  status: 'PENDING' | 'ONGOING' | 'COMPLETED' | 'CANCELED'; // Enum for trip status
+  id: string;
+  boatId: string;
+  captainId: string;
+  ownerId: string;
+  startTime: Date;
+  endTime: Date;
+  status: 'PENDING' | 'ONGOING' | 'COMPLETED' | 'CANCELED';
+  durationHours?: number;
+  captainEarnings?: number;
+  ownerRevenue?: number;
+  captainFee?: number;
+  ownerFee?: number;
+  netCaptainEarnings?: number;
+  netOwnerRevenue?: number;
+  platformRevenue?: number;
+  captainRate?: number; // Rate per hour for captain
+  ownerRate?: number; // Rate owner is willing to pay per hour
 }
