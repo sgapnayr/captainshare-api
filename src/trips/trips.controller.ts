@@ -1,4 +1,12 @@
-import { Controller, Post, Get, Patch, Body, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Body,
+  Param,
+  NotFoundException,
+} from '@nestjs/common';
 import { TripsService } from './trips.service';
 import { Trip } from './entities/trip.entity';
 
@@ -17,20 +25,25 @@ export class TripsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Trip | undefined {
-    return this.tripsService.findOne(id);
+  findOne(@Param('id') id: string): Trip {
+    const trip = this.tripsService.findOne(id);
+    if (!trip) {
+      throw new NotFoundException(`Trip with ID ${id} not found.`);
+    }
+    return trip;
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateData: Partial<Trip>): Trip {
+    const trip = this.tripsService.update(id, updateData);
+    if (!trip) {
+      throw new NotFoundException(`Trip with ID ${id} not found.`);
+    }
+    return trip;
   }
 
   @Get()
   list(): Trip[] {
     return this.tripsService.list();
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateData: Partial<Trip>,
-  ): Trip | undefined {
-    return this.tripsService.update(id, updateData);
   }
 }

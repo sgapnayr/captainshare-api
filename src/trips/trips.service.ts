@@ -7,7 +7,15 @@ export class TripsService {
   private trips: Trip[] = []; // In-memory storage
 
   create(trip: Partial<Trip>): Trip {
-    // Check for overlapping trips for the same boat or captain
+    if (!trip.status) {
+      trip.status = 'PENDING'; // Default status
+    }
+
+    const allowedStatuses = ['PENDING', 'ONGOING', 'COMPLETED', 'CANCELED'];
+    if (!allowedStatuses.includes(trip.status)) {
+      throw new Error(`Invalid status: ${trip.status}.`);
+    }
+
     const overlappingTrip = this.trips.find(
       (existingTrip) =>
         (existingTrip.boatId === trip.boatId ||
@@ -34,6 +42,12 @@ export class TripsService {
   }
 
   update(id: string, updateData: Partial<Trip>): Trip | undefined {
+    const allowedStatuses = ['PENDING', 'ONGOING', 'COMPLETED', 'CANCELED'];
+
+    if (updateData.status && !allowedStatuses.includes(updateData.status)) {
+      throw new Error(`Invalid status: ${updateData.status}.`);
+    }
+
     const tripIndex = this.trips.findIndex((trip) => trip.id === id);
     if (tripIndex === -1) {
       throw new Error('Trip not found.');
