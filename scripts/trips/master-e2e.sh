@@ -4,12 +4,8 @@ echo "=== Running End-to-End Tests ==="
 
 # List of E2E test scripts
 scripts=(
-  "scripts/trips/e2e/create-owner-trip-e2e.sh"
-  "scripts/trips/e2e/create-leased-trip-e2e.sh"
-  "scripts/trips/e2e/validate-revenue-e2e.sh"
-  "scripts/trips/e2e/update-trip-e2e.sh"
-  "scripts/trips/e2e/delete-trip-e2e.sh"
-  "scripts/trips/e2e/overlapping-trip-e2e.sh"
+  "scripts/trips/e2e/end-to-end-flow.sh"
+  "scripts/trips/e2e/full-lifecycle.sh"
 )
 
 for script in "${scripts[@]}"; do

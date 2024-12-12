@@ -4,64 +4,42 @@ BASE_URL="http://localhost:3000"
 
 echo "=== Starting End-to-End Flow ==="
 
-# Step 1: Create a Trip
-createResponse=$(curl -s -X POST "$BASE_URL/trips" \
+# Create an owner trip
+echo "=== Creating an Owner Trip ==="
+ownerTripResponse=$(curl -s -X POST "$BASE_URL/trips" \
   -H "Content-Type: application/json" \
   -d '{
-    "boatId": "boat789",
-    "captainId": "captain789",
-    "ownerId": "owner789",
-    "startTime": "2024-12-17T09:00:00.000Z",
-    "endTime": "2024-12-17T12:00:00.000Z",
-    "tripType": "LEASED_TRIP",
-    "captainShare": 0.4
+    "boatId": "boat123",
+    "captainId": "captain123",
+    "ownerId": "owner123",
+    "startTime": "2024-12-15T09:00:00.000Z",
+    "endTime": "2024-12-15T12:00:00.000Z",
+    "tripType": "OWNER_TRIP"
   }')
+echo "$ownerTripResponse" | jq
 
-tripId=$(echo "$createResponse" | jq -r '.id')
-
-if [ -n "$tripId" ]; then
-  echo "Trip Created: $tripId"
-else
-  echo "Failed to Create Trip:"
-  echo "$createResponse"
+# Extract owner trip ID
+ownerTripId=$(echo "$ownerTripResponse" | jq -r '.id')
+if [ -z "$ownerTripId" ]; then
+  echo "Failed to create Owner Trip"
   exit 1
 fi
 
-# Step 2: Fetch Trip Details
-echo "=== Fetching Trip Details ==="
-fetchResponse=$(curl -s "$BASE_URL/trips/$tripId")
-echo "Fetched Trip Details:"
-echo "$fetchResponse" | jq
-
-# Step 3: Update Trip Status
-echo "=== Updating Trip Status ==="
-updateResponse=$(curl -s -X PATCH "$BASE_URL/trips/$tripId" \
+# Update trip status
+echo "=== Updating Owner Trip Status ==="
+updateResponse=$(curl -s -X PATCH "$BASE_URL/trips/$ownerTripId" \
   -H "Content-Type: application/json" \
-  -d '{"status": "COMPLETED"}')
-echo "Updated Trip:"
+  -d '{"status": "ONGOING"}')
 echo "$updateResponse" | jq
 
-# Step 4: Validate Revenue
-echo "=== Validating Revenue ==="
-revenueResponse=$(curl -s "$BASE_URL/trips/$tripId")
-echo "Revenue Details:"
+# Fetch revenue
+echo "=== Fetching Revenue Details for Owner Trip ==="
+revenueResponse=$(curl -s "$BASE_URL/trips/$ownerTripId")
 echo "$revenueResponse" | jq
 
-# Step 5: Delete Trip
-echo "=== Deleting Trip ==="
-deleteResponse=$(curl -s -X DELETE "$BASE_URL/trips/$tripId")
+# Delete the trip
+echo "=== Deleting Owner Trip ==="
+deleteResponse=$(curl -s -X DELETE "$BASE_URL/trips/$ownerTripId")
+echo "$deleteResponse"
 
-if [ -z "$deleteResponse" ]; then
-  echo "Trip Deleted Successfully."
-else
-  echo "Failed to Delete Trip:"
-  echo "$deleteResponse"
-fi
-
-# Step 6: Confirm Deletion
-echo "=== Confirming Deletion ==="
-confirmResponse=$(curl -s "$BASE_URL/trips/$tripId")
-echo "Deletion Confirmation Response:"
-echo "$confirmResponse"
-
-echo "=== End-to-End Flow Completed ==="
+echo "=== End-to-End Flow Completed Successfully ==="
