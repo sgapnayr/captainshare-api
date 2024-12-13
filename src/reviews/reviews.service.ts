@@ -3,7 +3,7 @@ import { Review } from './entities/review.entity';
 
 @Injectable()
 export class ReviewsService {
-  private reviews: Review[] = []; // In-memory storage
+  private reviews: Review[] = [];
 
   create(review: Partial<Review>): Review {
     const newReview: Review = {
@@ -23,7 +23,6 @@ export class ReviewsService {
     return this.reviews.filter((review) => review.revieweeId === userId);
   }
 
-  // Corrected findByCaptain method
   findByCaptain(captainId: string): Review[] {
     return this.reviews.filter(
       (review) =>

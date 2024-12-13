@@ -1,10 +1,9 @@
-// src/boats/boats.service.ts
 import { Injectable } from '@nestjs/common';
 import { Boat } from './entities/boat.entity';
 
 @Injectable()
 export class BoatsService {
-  private boats: Boat[] = []; // In-memory storage
+  private boats: Boat[] = [];
 
   create(boat: Partial<Boat>): Boat {
     if (!boat.name || !boat.location || !boat.rateWillingToPay) {

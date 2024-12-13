@@ -1,4 +1,3 @@
-// src/boats/boats.controller.ts
 import { Controller, Post, Get, Delete, Body, Param } from '@nestjs/common';
 import { BoatsService } from './boats.service';
 import { Boat } from './entities/boat.entity';

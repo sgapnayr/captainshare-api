@@ -57,8 +57,8 @@ describe('TripsController', () => {
       endTime: new Date(tripDto.endTime),
       durationHours,
       captainRate: DEFAULT_CAPTAIN_RATE,
-      captainEarnings: rawCost, // $55/hour * 3 hours
-      ownerRevenue: 0, // Owners don't earn in OWNER_TRIP
+      captainEarnings: rawCost,
+      ownerRevenue: 0,
       captainFee,
       ownerFee,
       netCaptainEarnings: rawCost - captainFee,

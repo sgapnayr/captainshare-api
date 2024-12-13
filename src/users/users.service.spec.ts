@@ -91,10 +91,10 @@ describe('UsersService', () => {
     });
 
     const result = service.delete(user.id);
-    expect(result).toBe(true); // Successful deletion
+    expect(result).toBe(true);
     expect(() => service.findOne(user.id)).toThrowError(
       `User with ID ${user.id} not found`,
-    ); // Confirm user no longer exists
+    );
   });
 
   it('should throw an error if deleting a non-existent user', () => {

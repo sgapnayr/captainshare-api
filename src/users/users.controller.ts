@@ -18,7 +18,7 @@ export class UsersController {
 
   @Get()
   list(): User[] {
-    return this.usersService.list(); // Ensure your service has a `list` method to retrieve all users
+    return this.usersService.list();
   }
 
   @Get(':id')

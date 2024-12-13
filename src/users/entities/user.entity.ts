@@ -1,9 +1,9 @@
 import { IsOptional } from 'class-validator';
 
 export interface Availability {
-  day: string; // e.g., 'Monday'
-  startTime: string; // e.g., '08:00'
-  endTime: string; // e.g., '18:00'
+  day: string;
+  startTime: string;
+  endTime: string;
 }
 
 export class User {
@@ -15,8 +15,8 @@ export class User {
   role: 'CAPTAIN' | 'OWNER';
   isGovernmentIdVerified: boolean;
   @IsOptional()
-  availability?: Availability[]; // Optional for owners, required for captains
+  availability?: Availability[];
   @IsOptional()
-  ratePerHour?: number; // Optional for owners, required for captains
-  certifications: string[]; // e.g., ['USCG', 'SailingCert']
+  ratePerHour?: number;
+  certifications: string[];
 }

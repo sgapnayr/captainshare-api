@@ -38,23 +38,23 @@ describe('TripsService', () => {
 
       const createdTrip = service.create(trip);
 
-      expect(createdTrip.durationHours).toBe(3); // 3-hour trip
-      expect(createdTrip.captainEarnings).toBe(DEFAULT_CAPTAIN_RATE * 3); // $55/hour * 3
-      expect(createdTrip.ownerRevenue).toBe(0); // Owner does not make revenue
+      expect(createdTrip.durationHours).toBe(3);
+      expect(createdTrip.captainEarnings).toBe(DEFAULT_CAPTAIN_RATE * 3);
+      expect(createdTrip.ownerRevenue).toBe(0);
       expect(createdTrip.captainFee).toBeCloseTo(
-        DEFAULT_CAPTAIN_RATE * 3 * CAPTAIN_FEE_PERCENTAGE, // 8% of captain earnings
+        DEFAULT_CAPTAIN_RATE * 3 * CAPTAIN_FEE_PERCENTAGE,
       );
-      expect(createdTrip.ownerFee).toBeCloseTo(0); // No fee since owner doesn't make revenue
+      expect(createdTrip.ownerFee).toBeCloseTo(0);
       expect(createdTrip.netCaptainEarnings).toBeCloseTo(
         DEFAULT_CAPTAIN_RATE * 3 -
-          DEFAULT_CAPTAIN_RATE * 3 * CAPTAIN_FEE_PERCENTAGE, // Captain earnings after fee
+          DEFAULT_CAPTAIN_RATE * 3 * CAPTAIN_FEE_PERCENTAGE,
       );
-      expect(createdTrip.netOwnerRevenue).toBe(0); // Owner net revenue remains 0
+      expect(createdTrip.netOwnerRevenue).toBe(0);
       const durationHours = 3;
       const rawCost = DEFAULT_CAPTAIN_RATE * durationHours;
       const ownerFee = rawCost * OWNER_FEE_PERCENTAGE;
       const captainFee = rawCost * CAPTAIN_FEE_PERCENTAGE;
-      const expectedPlatformRevenue = ownerFee + captainFee; // Corrected formula
+      const expectedPlatformRevenue = ownerFee + captainFee;
 
       expect(createdTrip.platformRevenue).toBeCloseTo(expectedPlatformRevenue);
     });

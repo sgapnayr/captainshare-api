@@ -1,14 +1,10 @@
-// src/trips/trip.constants.ts
+export const CAPTAIN_FEE_PERCENTAGE = 0.08;
+export const OWNER_FEE_PERCENTAGE = 0.13;
+export const DEFAULT_CAPTAIN_RATE = 55;
+export const DEFAULT_TOTAL_PRICE = 795;
+export const DEFAULT_CAPTAIN_SHARE = 0.3;
+export const DEFAULT_TRIP_TYPE = 'OWNER_TRIP';
 
-// Constants for fees and shares
-export const CAPTAIN_FEE_PERCENTAGE = 0.08; // 8%
-export const OWNER_FEE_PERCENTAGE = 0.13; // 13%
-export const DEFAULT_CAPTAIN_RATE = 55; // $55/hour
-export const DEFAULT_TOTAL_PRICE = 795; // $795
-export const DEFAULT_CAPTAIN_SHARE = 0.3; // 30% for leased trips
-export const DEFAULT_TRIP_TYPE = 'OWNER_TRIP'; // Default to owner trips
-
-// Utility function to calculate duration in hours
 export const calculateDurationHours = (
   startTime: Date,
   endTime: Date,
@@ -17,7 +13,7 @@ export const calculateDurationHours = (
 };
 
 export function calculateFees(amount: number, percentage: number): number {
-  return round(amount * percentage, 4); // Keep intermediate precision higher
+  return round(amount * percentage, 4);
 }
 
 export function round(value: number, precision: number = 2): number {

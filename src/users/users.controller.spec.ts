@@ -105,12 +105,10 @@ describe('UsersController', () => {
   });
 
   it.skip('should return a 404 if deleting a non-existent user', async () => {
-    // Mock the service to throw a generic error
     jest.spyOn(service, 'delete').mockImplementation(() => {
       throw new Error('User not found');
     });
 
-    // Expect the controller to handle it as a NotFoundException
     await expect(controller.delete('non-existent-id')).rejects.toThrow(
       NotFoundException,
     );

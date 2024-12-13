@@ -5,7 +5,7 @@ export class Boat {
   capacity: number;
   location: string;
   licenseRequired: string[];
-  certificationsRequired: string[]; // e.g., ['USCG', 'AdvancedSailing']
+  certificationsRequired: string[];
   ownerIds: string[];
-  rateWillingToPay: number; // Rate owners are willing to pay
+  rateWillingToPay: number;
 }

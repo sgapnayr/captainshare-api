@@ -3,7 +3,7 @@ import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  private users: User[] = []; // In-memory storage
+  private users: User[] = [];
 
   create(user: Partial<User>): User {
     const existingUser = this.users.find((u) => u.email === user.email);
@@ -51,6 +51,6 @@ export class UsersService {
   }
 
   list(): User[] {
-    return this.users; // Returns all users
+    return this.users;
   }
 }

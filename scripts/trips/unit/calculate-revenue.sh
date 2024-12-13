@@ -2,55 +2,75 @@
 
 BASE_URL="http://localhost:3000"
 
-# Check if trip ID exists
-if [ ! -f tripId.tmp ]; then
-  echo "Trip ID not found. Please create a trip first."
-  exit 1
-fi
+# Function to prompt the user for input
+get_input() {
+  local prompt=$1
+  local var
+  read -p "$prompt: " var
+  echo "$var"
+}
 
-# Read the trip ID from the file
-tripId=$(cat tripId.tmp)
+# Get user input for trip details
+echo "=== Enter Trip Details ==="
+tripType=$(get_input "Choose trip type (OWNER_TRIP or LEASED_TRIP)")
 
-# Fetch the trip details
-echo "=== Fetching Trip Details for Revenue Calculation ==="
-response=$(curl -s "$BASE_URL/trips/$tripId")
+if [ "$tripType" == "OWNER_TRIP" ]; then
+  durationHours=$(get_input "Enter trip duration (hours)")
+  captainRate=$(get_input "Enter captain rate (per hour)")
 
-# Check if the trip exists
-if echo "$response" | jq -e '.id' >/dev/null 2>&1; then
-  echo "Trip Details Fetched Successfully."
-  echo "$response" | jq
+  # Calculate derived values
+  platformFeeRate=0.13
+  captainFeeRate=0.08
+  totalCostToOwner=$(echo "$durationHours * $captainRate" | bc)
+  ownerFee=$(echo "$totalCostToOwner * $platformFeeRate" | bc)
+  captainEarnings=$(echo "$durationHours * $captainRate" | bc)
+  netCaptainEarnings=$(echo "$captainEarnings - ($captainEarnings * $captainFeeRate)" | bc)
+  platformRevenue=$(echo "$ownerFee + ($captainEarnings * $captainFeeRate)" | bc)
 
-  # Extract common trip data
-  tripType=$(echo "$response" | jq -r '.tripType')
-  durationHours=$(echo "$response" | jq -r '.durationHours')
-  captainRate=$(echo "$response" | jq -r '.captainRate')
-  captainEarnings=$(echo "$response" | jq -r '.captainEarnings')
-  netCaptainEarnings=$(echo "$response" | jq -r '.netCaptainEarnings')
-  ownerFee=$(echo "$response" | jq -r '.ownerFee')
-  platformRevenue=$(echo "$response" | jq -r '.platformRevenue')
-  totalCostToOwner=$(echo "$response" | jq -r '.totalCostToOwner')
-
-  echo "=== Revenue Calculation for Trip ID: $tripId ==="
-  echo "Trip Type: $tripType"
+  echo "=== Revenue Calculation for OWNER_TRIP ==="
   echo "Duration: $durationHours hours"
+  echo "Captain Rate: $captainRate/hour"
+  echo "--- Owner Payment Details ---"
+  echo "Total Cost to Owner: $totalCostToOwner"
+  echo "Network Fee (13%): $ownerFee"
+  echo "--- Captain Revenue ---"
+  echo "Captain Earnings: $captainEarnings"
+  echo "Net Captain Earnings: $netCaptainEarnings"
+  echo "--- Platform Revenue ---"
+  echo "Platform Revenue (Owner + Captain Fees): $platformRevenue"
 
-  if [ "$tripType" == "OWNER_TRIP" ]; then
-    echo "--- Owner Payment Details ---"
-    echo "Captain Rate: $captainRate/hour"
-    echo "Total Cost to Owner: $totalCostToOwner"
-    echo "Owner Fee (13%): $ownerFee"
+elif [ "$tripType" == "LEASED_TRIP" ]; then
+  totalPrice=$(get_input "Enter total price of the trip")
+  captainShare=$(get_input "Enter captain share (fraction, e.g., 0.6) (or press Enter for default 0.6)")
 
-    echo "--- Captain Revenue ---"
-    echo "Captain Earnings: $captainEarnings"
-    echo "Net Captain Earnings: $netCaptainEarnings"
+  # Set default captain share if empty
+  captainShare=${captainShare:-0.6}
 
-    echo "--- Platform Revenue ---"
-    echo "Platform Revenue (Owner + Captain Fees): $platformRevenue"
-  elif [ "$tripType" == "LEASED_TRIP" ]; then
-    # Existing leased trip calculation logic
-    ...
-  fi
+  # Calculate derived values
+  platformFeeRate=0.13
+  captainFeeRate=0.08
+  ownerShare=$(echo "1 - $captainShare" | bc)
+  captainEarnings=$(echo "$totalPrice * $captainShare" | bc)
+  ownerRevenue=$(echo "$totalPrice * $ownerShare" | bc)
+  captainFee=$(echo "$captainEarnings * $captainFeeRate" | bc)
+  netCaptainEarnings=$(echo "$captainEarnings - $captainFee" | bc)
+  ownerFee=$(echo "$ownerRevenue * $platformFeeRate" | bc)
+  netOwnerRevenue=$(echo "$ownerRevenue - $ownerFee" | bc)
+  platformRevenue=$(echo "$captainFee + $ownerFee" | bc)
+
+  echo "=== Revenue Calculation for LEASED_TRIP ==="
+  echo "Total Price: $totalPrice"
+  echo "--- Platform Revenue ---"
+  echo "Platform Revenue (Captain + Owner Fees): $platformRevenue"
+  echo "--- Captain Revenue ---"
+  echo "Captain Earnings (Share $captainShare): $captainEarnings"
+  echo "Captain Fee (8%): $captainFee"
+  echo "Net Captain Earnings: $netCaptainEarnings"
+  echo "--- Owner Revenue ---"
+  echo "Owner Revenue (Share $ownerShare): $ownerRevenue"
+  echo "Owner Fee (13%): $ownerFee"
+  echo "Net Owner Revenue: $netOwnerRevenue"
+
 else
-  echo "Failed to Fetch Trip Details:"
-  echo "$response"
+  echo "Invalid trip type. Please restart and enter a valid trip type."
 fi

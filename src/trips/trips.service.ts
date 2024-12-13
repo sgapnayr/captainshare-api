@@ -22,9 +22,8 @@ export class TripsService {
   ) {
     const rawCost = round(captainRate * durationHours);
     const ownerFee = calculateFees(rawCost, OWNER_FEE_PERCENTAGE);
-    const platformRevenue = round(
-      ownerFee + calculateFees(rawCost, CAPTAIN_FEE_PERCENTAGE),
-    );
+    const captainFee = calculateFees(rawCost, CAPTAIN_FEE_PERCENTAGE);
+    const platformRevenue = round(ownerFee + captainFee);
     const totalCostToOwner = round(rawCost + ownerFee);
 
     return {
