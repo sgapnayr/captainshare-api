@@ -14,9 +14,15 @@ export class User {
   phoneNumber: string;
   role: 'CAPTAIN' | 'OWNER';
   isGovernmentIdVerified: boolean;
+
   @IsOptional()
   availability?: Availability[];
+
   @IsOptional()
   ratePerHour?: number;
+
+  @IsOptional()
+  userLocation?: string;
+
   certifications: string[];
 }

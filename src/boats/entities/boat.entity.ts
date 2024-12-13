@@ -5,7 +5,11 @@ export class Boat {
   capacity: number;
   location: string;
   licenseRequired: string[];
-  certificationsRequired: string[];
+  captainShareCertificationsRequired: string[];
   ownerIds: string[];
   rateWillingToPay: number;
+  make: string;
+  model: string;
+  year: number;
+  color: string;
 }

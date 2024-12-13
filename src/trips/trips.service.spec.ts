@@ -34,6 +34,7 @@ describe('TripsService', () => {
         endTime: new Date('2024-12-15T12:00:00.000Z'),
         status: 'PENDING',
         tripType: 'OWNER_TRIP',
+        location: 'Miami',
       };
 
       const createdTrip = service.create(trip);
@@ -50,6 +51,7 @@ describe('TripsService', () => {
           DEFAULT_CAPTAIN_RATE * 3 * CAPTAIN_FEE_PERCENTAGE,
       );
       expect(createdTrip.netOwnerRevenue).toBe(0);
+
       const durationHours = 3;
       const rawCost = DEFAULT_CAPTAIN_RATE * durationHours;
       const ownerFee = rawCost * OWNER_FEE_PERCENTAGE;
@@ -57,6 +59,7 @@ describe('TripsService', () => {
       const expectedPlatformRevenue = ownerFee + captainFee;
 
       expect(createdTrip.platformRevenue).toBeCloseTo(expectedPlatformRevenue);
+      expect(createdTrip.location).toBe('Miami');
     });
 
     it('should throw an error for overlapping trips', () => {
@@ -68,6 +71,7 @@ describe('TripsService', () => {
         endTime: new Date('2024-12-15T12:00:00.000Z'),
         status: 'PENDING',
         tripType: 'OWNER_TRIP',
+        location: 'Miami',
       };
 
       service.create(trip);
@@ -80,6 +84,7 @@ describe('TripsService', () => {
         endTime: new Date('2024-12-15T13:00:00.000Z'),
         status: 'PENDING',
         tripType: 'OWNER_TRIP',
+        location: 'Miami',
       };
 
       expect(() => service.create(overlappingTrip)).toThrowError(
@@ -100,6 +105,7 @@ describe('TripsService', () => {
         status: 'PENDING',
         tripType: 'LEASED_TRIP',
         captainShare: DEFAULT_CAPTAIN_SHARE,
+        location: 'Miami',
       };
 
       const createdTrip = service.create(trip);
@@ -126,6 +132,7 @@ describe('TripsService', () => {
         ownerRevenue - ownerRevenue * OWNER_FEE_PERCENTAGE,
       );
       expect(createdTrip.platformRevenue).toBeCloseTo(expectedPlatformRevenue);
+      expect(createdTrip.location).toBe('Miami');
     });
 
     it('should throw an error for invalid trip types', () => {
@@ -137,6 +144,7 @@ describe('TripsService', () => {
         endTime: new Date('2024-12-15T12:00:00.000Z'),
         status: 'PENDING',
         tripType: 'INVALID_TYPE' as any,
+        location: 'Miami',
       };
 
       expect(() => service.create(trip)).toThrowError(

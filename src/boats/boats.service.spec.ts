@@ -24,9 +24,13 @@ describe('BoatsService', () => {
       capacity: 10,
       location: 'Miami',
       licenseRequired: ['USCG'],
-      certificationsRequired: ['AdvancedSailing'],
+      captainShareCertificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner123'],
       rateWillingToPay: 100,
+      make: 'Yamaha',
+      model: 'SX210',
+      year: 2021,
+      color: 'White',
     };
 
     const createdBoat = service.create(boat);
@@ -41,9 +45,13 @@ describe('BoatsService', () => {
       capacity: 10,
       location: 'Miami',
       licenseRequired: ['USCG'],
-      certificationsRequired: ['AdvancedSailing'],
+      captainShareCertificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner123'],
       rateWillingToPay: 100,
+      make: 'Yamaha',
+      model: 'SX210',
+      year: 2021,
+      color: 'White',
     };
 
     service.create(boat);
@@ -60,9 +68,13 @@ describe('BoatsService', () => {
       capacity: 6,
       location: 'San Diego',
       licenseRequired: ['USCG'],
-      certificationsRequired: ['AdvancedSailing'],
+      captainShareCertificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner456'],
       rateWillingToPay: 200,
+      make: 'Boston Whaler',
+      model: 'Montauk',
+      year: 2020,
+      color: 'Blue',
     });
 
     const foundBoat = service.findOne(boat.id);
@@ -76,9 +88,13 @@ describe('BoatsService', () => {
       capacity: 10,
       location: 'Miami',
       licenseRequired: ['USCG'],
-      certificationsRequired: ['AdvancedSailing'],
+      captainShareCertificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner123'],
       rateWillingToPay: 150,
+      make: 'Yamaha',
+      model: 'SX210',
+      year: 2021,
+      color: 'White',
     });
 
     service.create({
@@ -87,9 +103,13 @@ describe('BoatsService', () => {
       capacity: 6,
       location: 'San Diego',
       licenseRequired: ['USCG'],
-      certificationsRequired: ['ExpertSailing'],
+      captainShareCertificationsRequired: ['ExpertSailing'],
       ownerIds: ['owner456'],
       rateWillingToPay: 250,
+      make: 'Boston Whaler',
+      model: 'Montauk',
+      year: 2020,
+      color: 'Blue',
     });
 
     const boats = service.list();
@@ -103,9 +123,13 @@ describe('BoatsService', () => {
       capacity: 8,
       location: 'Key West',
       licenseRequired: ['USCG'],
-      certificationsRequired: ['AdvancedSailing'],
+      captainShareCertificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner789'],
       rateWillingToPay: 180,
+      make: 'Bayliner',
+      model: 'Element E18',
+      year: 2019,
+      color: 'Red',
     });
 
     const result = service.delete(boat.id);
@@ -120,9 +144,13 @@ describe('BoatsService', () => {
       capacity: 10,
       location: 'Miami',
       licenseRequired: ['USCG'],
-      certificationsRequired: ['AdvancedSailing'],
+      captainShareCertificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner1'],
       rateWillingToPay: 100,
+      make: 'Yamaha',
+      model: 'SX210',
+      year: 2021,
+      color: 'White',
     });
 
     service.create({
@@ -131,9 +159,13 @@ describe('BoatsService', () => {
       capacity: 6,
       location: 'San Diego',
       licenseRequired: ['USCG', 'ProSailing'],
-      certificationsRequired: ['ExpertSailing'],
+      captainShareCertificationsRequired: ['ExpertSailing'],
       ownerIds: ['owner2'],
       rateWillingToPay: 150,
+      make: 'Boston Whaler',
+      model: 'Montauk',
+      year: 2020,
+      color: 'Blue',
     });
 
     const result = service.filterByCaptain(['AdvancedSailing'], ['USCG']);

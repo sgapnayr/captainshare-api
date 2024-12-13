@@ -55,12 +55,17 @@ export class TripsService {
   }
 
   create(trip: Partial<Trip>): Trip {
+    if (!trip.location) {
+      throw new Error('Location is required for creating a trip.');
+    }
+
     const overlappingTrip = this.trips.find(
       (existingTrip) =>
         (existingTrip.boatId === trip.boatId ||
           existingTrip.captainId === trip.captainId) &&
         new Date(existingTrip.startTime!) < new Date(trip.endTime!) &&
-        new Date(existingTrip.endTime!) > new Date(trip.startTime!),
+        new Date(existingTrip.endTime!) > new Date(trip.startTime!) &&
+        existingTrip.location === trip.location,
     );
 
     if (overlappingTrip) {
@@ -112,6 +117,7 @@ export class TripsService {
       netOwnerRevenue,
       platformRevenue,
       totalCostToOwner,
+      location: trip.location,
     } as Trip;
 
     this.trips.push(newTrip);
@@ -144,6 +150,11 @@ export class TripsService {
     }
 
     const updatedTrip = { ...this.trips[tripIndex], ...updateData };
+
+    if (updateData.location && !updatedTrip.location) {
+      throw new Error('Location cannot be removed.');
+    }
+
     this.trips[tripIndex] = updatedTrip;
     return updatedTrip;
   }

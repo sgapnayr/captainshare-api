@@ -23,4 +23,6 @@ export interface Trip {
   netCaptainEarnings: number;
   netOwnerRevenue: number;
   platformRevenue: number;
+
+  location: string;
 }

@@ -1,15 +1,17 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:3000"
+BASE_URL="http://localhost:3000/trips"
 
-# List all trips
-echo "=== Listing All Trips ==="
-response=$(curl -s "$BASE_URL/trips")
+echo "=== List All Trips ==="
 
-if echo "$response" | grep -q '"id"'; then
-  echo "All Trips:"
-  echo "$response" | jq
+# Send the GET request
+response=$(curl -s -X GET "$BASE_URL")
+
+# Print the response
+if echo "$response" | jq . > /dev/null 2>&1; then
+  echo "Trips List (Formatted):"
+  echo "$response" | jq .
 else
-  echo "Failed to List Trips:"
+  echo "Failed to Fetch Trips List. Response:"
   echo "$response"
 fi

@@ -43,6 +43,7 @@ describe('TripsController', () => {
       endTime: new Date('2024-12-15T12:00:00.000Z'),
       status: 'PENDING' as const,
       tripType: 'OWNER_TRIP' as const,
+      location: 'Miami', // New field
     };
 
     const durationHours = 3;
@@ -66,11 +67,13 @@ describe('TripsController', () => {
       platformRevenue: ownerFee + captainFee,
       totalCostToOwner: rawCost + ownerFee,
       tripType: 'OWNER_TRIP',
+      location: 'Miami', // New field
     };
 
     service.create.mockReturnValue(createdTrip);
 
     const result = await controller.create(tripDto);
+    expect(result.location).toBe('Miami'); // Validate location
     expect(result.startTime).toBeInstanceOf(Date);
     expect(result.endTime).toBeInstanceOf(Date);
     expect(result.durationHours).toBe(durationHours);
@@ -94,6 +97,7 @@ describe('TripsController', () => {
       status: 'PENDING' as const,
       tripType: 'LEASED_TRIP' as const,
       captainShare: DEFAULT_CAPTAIN_SHARE,
+      location: 'Key West', // New field
     };
 
     const createdTrip: Trip = {
@@ -126,11 +130,13 @@ describe('TripsController', () => {
           (1 - DEFAULT_CAPTAIN_SHARE) *
           OWNER_FEE_PERCENTAGE,
       tripType: 'LEASED_TRIP',
+      location: 'Key West', // New field
     };
 
     service.create.mockReturnValue(createdTrip);
 
     const result = await controller.create(tripDto);
+    expect(result.location).toBe('Key West'); // Validate location
     expect(result.startTime).toBeInstanceOf(Date);
     expect(result.endTime).toBeInstanceOf(Date);
     expect(result.durationHours).toBe(3);
@@ -164,6 +170,17 @@ describe('TripsController', () => {
     );
   });
 
+  it('should update a trip location', async () => {
+    const tripUpdateDto: Partial<Trip> = { location: 'Updated Location' };
+    const updatedTrip = { id: 'trip123', location: 'Updated Location' } as Trip;
+
+    service.update.mockReturnValue(updatedTrip);
+
+    const result = await controller.update('trip123', tripUpdateDto);
+    expect(result.location).toBe('Updated Location');
+    expect(service.update).toHaveBeenCalledWith('trip123', tripUpdateDto);
+  });
+
   it('should find a trip by ID', async () => {
     const trip = {
       id: 'trip123',
@@ -173,11 +190,13 @@ describe('TripsController', () => {
       startTime: new Date('2024-12-15T09:00:00.000Z'),
       endTime: new Date('2024-12-15T12:00:00.000Z'),
       status: 'PENDING',
+      location: 'Miami', // New field
     } as Trip;
 
     service.findOne.mockReturnValue(trip);
 
     const result = await controller.findOne('trip123');
+    expect(result.location).toBe('Miami');
     expect(result).toEqual(trip);
     expect(service.findOne).toHaveBeenCalledWith('trip123');
   });

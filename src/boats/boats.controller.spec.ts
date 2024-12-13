@@ -37,9 +37,13 @@ describe('BoatsController', () => {
       capacity: 10,
       location: 'Miami',
       licenseRequired: ['USCG'],
-      certificationsRequired: ['AdvancedSailing'],
+      captainShareCertificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner123'],
       rateWillingToPay: 100,
+      make: 'Yamaha',
+      model: 'SX210',
+      year: 2021,
+      color: 'White',
     };
 
     const createdBoat: Boat = { ...boatDto, id: 'boat123' };
@@ -58,9 +62,13 @@ describe('BoatsController', () => {
       capacity: 10,
       location: 'Miami',
       licenseRequired: ['USCG'],
-      certificationsRequired: ['AdvancedSailing'],
+      captainShareCertificationsRequired: ['AdvancedSailing'],
       ownerIds: ['owner123'],
       rateWillingToPay: 100,
+      make: 'Yamaha',
+      model: 'SX210',
+      year: 2021,
+      color: 'White',
     };
 
     service.findOne.mockReturnValue(boat);
@@ -79,9 +87,13 @@ describe('BoatsController', () => {
         capacity: 10,
         location: 'Miami',
         licenseRequired: ['USCG'],
-        certificationsRequired: ['AdvancedSailing'],
+        captainShareCertificationsRequired: ['AdvancedSailing'],
         ownerIds: ['owner1'],
         rateWillingToPay: 100,
+        make: 'Yamaha',
+        model: 'SX210',
+        year: 2021,
+        color: 'White',
       },
       {
         id: 'boat2',
@@ -90,9 +102,13 @@ describe('BoatsController', () => {
         capacity: 6,
         location: 'San Diego',
         licenseRequired: ['USCG', 'ProSailing'],
-        certificationsRequired: ['ExpertSailing'],
+        captainShareCertificationsRequired: ['ExpertSailing'],
         ownerIds: ['owner2'],
         rateWillingToPay: 150,
+        make: 'Boston Whaler',
+        model: 'Montauk',
+        year: 2020,
+        color: 'Blue',
       },
     ];
 
@@ -116,9 +132,13 @@ describe('BoatsController', () => {
         capacity: 10,
         location: 'Miami',
         licenseRequired: ['USCG'],
-        certificationsRequired: ['AdvancedSailing'],
+        captainShareCertificationsRequired: ['AdvancedSailing'],
         ownerIds: ['owner1'],
         rateWillingToPay: 100,
+        make: 'Yamaha',
+        model: 'SX210',
+        year: 2021,
+        color: 'White',
       },
     ];
 

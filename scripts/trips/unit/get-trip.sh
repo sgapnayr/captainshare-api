@@ -1,24 +1,19 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:3000"
+BASE_URL="http://localhost:3000/trips"
 
-# Check if trip ID exists
-if [ ! -f tripId.tmp ]; then
-  echo "Trip ID not found. Please create a trip first."
-  exit 1
-fi
+echo "=== Get Trip by ID ==="
 
-# Read the trip ID from the file
-tripId=$(cat tripId.tmp)
+read -p "Enter trip ID: " tripId
 
-# Fetch the trip
-echo "=== Fetching Trip Details ==="
-response=$(curl -s "$BASE_URL/trips/$tripId")
+# Send the GET request
+response=$(curl -s -X GET "$BASE_URL/$tripId")
 
-if echo "$response" | grep -q '"id"'; then
-  echo "Trip Details:"
-  echo "$response" | jq
+# Print the response
+if echo "$response" | jq . > /dev/null 2>&1; then
+  echo "Trip Details (Formatted):"
+  echo "$response" | jq .
 else
-  echo "Failed to Fetch Trip Details:"
+  echo "Failed to Fetch Trip. Response:"
   echo "$response"
 fi

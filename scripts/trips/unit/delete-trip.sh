@@ -1,24 +1,19 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:3000"
+BASE_URL="http://localhost:3000/trips"
 
-# Check if trip ID exists
-if [ ! -f tripId.tmp ]; then
-  echo "Trip ID not found. Please create a trip first."
-  exit 1
-fi
+echo "=== Delete a Trip ==="
 
-# Read the trip ID from the file
-tripId=$(cat tripId.tmp)
+read -p "Enter trip ID: " tripId
 
-# Delete the trip
-echo "=== Deleting Trip ==="
-response=$(curl -s -X DELETE "$BASE_URL/trips/$tripId")
+# Send the DELETE request
+response=$(curl -s -X DELETE "$BASE_URL/$tripId")
 
-if [ -z "$response" ]; then
-  echo "Trip Deleted Successfully."
-  rm -f tripId.tmp
+# Print the response
+if echo "$response" | jq . > /dev/null 2>&1; then
+  echo "Trip Deleted Successfully (Formatted):"
+  echo "$response" | jq .
 else
-  echo "Failed to Delete Trip:"
+  echo "Failed to Delete Trip. Response:"
   echo "$response"
 fi

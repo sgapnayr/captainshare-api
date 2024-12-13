@@ -6,8 +6,19 @@ export class BoatsService {
   private boats: Boat[] = [];
 
   create(boat: Partial<Boat>): Boat {
-    if (!boat.name || !boat.location || !boat.rateWillingToPay) {
-      throw new Error('Name, location, and rateWillingToPay are required.');
+    if (
+      !boat.name ||
+      !boat.location ||
+      !boat.rateWillingToPay ||
+      !boat.licenseRequired ||
+      !boat.make ||
+      !boat.model ||
+      !boat.year ||
+      !boat.color
+    ) {
+      throw new Error(
+        'Name, location, rateWillingToPay, licenseRequired, make, model, year, and color are required.',
+      );
     }
 
     const duplicateBoat = this.boats.find(
@@ -46,7 +57,7 @@ export class BoatsService {
     captainLicenses: string[],
   ): Boat[] {
     return this.boats.filter((boat) => {
-      const certsMatch = boat.certificationsRequired.every((cert) =>
+      const certsMatch = boat.captainShareCertificationsRequired.every((cert) =>
         captainCertifications.includes(cert),
       );
       const licensesMatch = boat.licenseRequired.every((license) =>

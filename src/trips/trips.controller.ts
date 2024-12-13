@@ -26,6 +26,10 @@ export class TripsController {
   @Post()
   create(@Body() tripDto: Partial<Trip>): Trip {
     try {
+      if (!tripDto.location) {
+        throw new BadRequestException('Location is required for a trip.');
+      }
+
       const trip = {
         ...tripDto,
         startTime: new Date(tripDto.startTime!),
@@ -35,6 +39,7 @@ export class TripsController {
         captainRate: tripDto.captainRate || DEFAULT_CAPTAIN_RATE,
         captainShare: tripDto.captainShare || DEFAULT_CAPTAIN_SHARE,
       };
+
       return this.tripsService.create(trip);
     } catch (error) {
       if (error.message.includes('already booked')) {
@@ -57,6 +62,10 @@ export class TripsController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateData: Partial<Trip>): Trip {
+    if (updateData.location && typeof updateData.location !== 'string') {
+      throw new BadRequestException('Invalid location.');
+    }
+
     const trip = this.tripsService.update(id, updateData);
     if (!trip) {
       throw new NotFoundException(`Trip with ID ${id} not found.`);
