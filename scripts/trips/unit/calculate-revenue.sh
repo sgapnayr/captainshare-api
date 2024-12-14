@@ -26,15 +26,19 @@ if [ "$tripType" == "OWNER_TRIP" ]; then
   captainEarnings=$(echo "$durationHours * $captainRate" | bc)
   netCaptainEarnings=$(echo "$captainEarnings - ($captainEarnings * $captainFeeRate)" | bc)
   platformRevenue=$(echo "$ownerFee + ($captainEarnings * $captainFeeRate)" | bc)
+  trueTotalCostToOwner=$(echo "$totalCostToOwner + $ownerFee" | bc)
+  captainFee=$(echo "$captainEarnings * $captainFeeRate" | bc)
 
   echo "=== Revenue Calculation for OWNER_TRIP ==="
   echo "Duration: $durationHours hours"
   echo "Captain Rate: $captainRate/hour"
   echo "--- Owner Payment Details ---"
-  echo "Total Cost to Owner: $totalCostToOwner"
-  echo "Network Fee (13%): $ownerFee"
+  echo "Cost to Owner: $totalCostToOwner"
+  echo "Network Fee to Owner (13%): $ownerFee"
+  echo "Total Cost to Owner: $trueTotalCostToOwner"
   echo "--- Captain Revenue ---"
   echo "Captain Earnings: $captainEarnings"
+  echo "Network Fee to Captain (8%): $captainFee"
   echo "Net Captain Earnings: $netCaptainEarnings"
   echo "--- Platform Revenue ---"
   echo "Platform Revenue (Owner + Captain Fees): $platformRevenue"

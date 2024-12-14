@@ -2,74 +2,102 @@
 
 BASE_URL="http://localhost:3000/users"
 
-echo "=== Creating Two Unique Users ==="
+echo "=== User Creation Script ==="
 
-# Payload for the OWNER
-ownerPayload=$(
-  cat <<EOF
+# Function to get user input
+get_user_input() {
+  local label="$1"
+  local var
+  read -p "$label: " var
+  echo "$var"
+}
+
+# Function to create a user
+create_user() {
+  local payload="$1"
+  local role="$2"
+
+  echo "Creating $role user..."
+  response=$(curl -s -X POST "$BASE_URL" \
+    -H "Content-Type: application/json" \
+    -d "$payload")
+
+  if echo "$response" | jq . > /dev/null 2>&1; then
+    echo "$role created successfully (Formatted):"
+    echo "$response" | jq .
+  else
+    echo "Failed to create $role. Response:"
+    echo "$response"
+  fi
+}
+
+# Ask if the user is a Captain or Owner
+userRole=$(get_user_input "Are you creating a Captain or an Owner? (Type 'Captain' or 'Owner')")
+
+if [[ "$userRole" == "Owner" || "$userRole" == "owner" ]]; then
+  # Get input for the OWNER
+  echo "Enter details for the OWNER:"
+  ownerFirstName=$(get_user_input "First Name")
+  ownerLastName=$(get_user_input "Last Name")
+  ownerEmail=$(get_user_input "Email")
+  ownerPhoneNumber=$(get_user_input "Phone Number")
+
+  ownerPayload=$(
+    cat <<EOF
 {
-  "firstName": "OwnerFirstName",
-  "lastName": "OwnerLastName",
-  "email": "owner@example.com",
-  "phoneNumber": "1234567890",
+  "firstName": "$ownerFirstName",
+  "lastName": "$ownerLastName",
+  "email": "$ownerEmail",
+  "phoneNumber": "$ownerPhoneNumber",
   "role": "OWNER",
   "certifications": []
 }
 EOF
-)
+  )
 
-# Payload for the CAPTAIN
-captainPayload=$(
-  cat <<EOF
+  create_user "$ownerPayload" "OWNER"
+
+elif [[ "$userRole" == "Captain" || "$userRole" == "captain" ]]; then
+  # Get input for the CAPTAIN
+  echo "Enter details for the CAPTAIN:"
+  captainFirstName=$(get_user_input "First Name")
+  captainLastName=$(get_user_input "Last Name")
+  captainEmail=$(get_user_input "Email")
+  captainPhoneNumber=$(get_user_input "Phone Number")
+  captainRatePerHour=$(get_user_input "Rate Per Hour")
+  captainCertifications=$(get_user_input "Certifications (comma-separated)")
+  captainAvailabilityDay=$(get_user_input "Availability Day")
+  captainAvailabilityStart=$(get_user_input "Availability Start Time (HH:MM)")
+  captainAvailabilityEnd=$(get_user_input "Availability End Time (HH:MM)")
+  captainUserLocation=$(get_user_input "User Location")
+
+  captainPayload=$(
+    cat <<EOF
 {
-  "firstName": "CaptainFirstName",
-  "lastName": "CaptainLastName",
-  "email": "captain@example.com",
-  "phoneNumber": "0987654321",
+  "firstName": "$captainFirstName",
+  "lastName": "$captainLastName",
+  "email": "$captainEmail",
+  "phoneNumber": "$captainPhoneNumber",
   "role": "CAPTAIN",
-  "ratePerHour": 75,
-  "certifications": ["SafetyTraining", "FirstAid"],
+  "ratePerHour": $captainRatePerHour,
+  "certifications": ["$(echo $captainCertifications | sed 's/,/","/g')"],
   "availability": [
     {
-      "day": "Monday",
-      "startTime": "09:00",
-      "endTime": "17:00"
+      "day": "$captainAvailabilityDay",
+      "startTime": "$captainAvailabilityStart",
+      "endTime": "$captainAvailabilityEnd"
     }
   ],
-  "userLocation": "Miami"
+  "userLocation": "$captainUserLocation"
 }
 EOF
-)
+  )
 
-# Create OWNER
-echo "Creating OWNER user..."
-ownerResponse=$(curl -s -X POST "$BASE_URL" \
--H "Content-Type: application/json" \
--d "$ownerPayload")
+  create_user "$captainPayload" "CAPTAIN"
 
-if echo "$ownerResponse" | jq . > /dev/null 2>&1; then
-  echo "OWNER created successfully (Formatted):"
-  echo "$ownerResponse" | jq .
 else
-  echo "Failed to create OWNER. Response:"
-  echo "$ownerResponse"
+  echo "Invalid role. Please restart the script and choose either 'Captain' or 'Owner'."
+  exit 1
 fi
 
-echo ""
-
-# Create CAPTAIN
-echo "Creating CAPTAIN user..."
-captainResponse=$(curl -s -X POST "$BASE_URL" \
--H "Content-Type: application/json" \
--d "$captainPayload")
-
-if echo "$captainResponse" | jq . > /dev/null 2>&1; then
-  echo "CAPTAIN created successfully (Formatted):"
-  echo "$captainResponse" | jq .
-else
-  echo "Failed to create CAPTAIN. Response:"
-  echo "$captainResponse"
-fi
-
-echo ""
 echo "=== User Creation Completed ==="

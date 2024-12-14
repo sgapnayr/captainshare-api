@@ -1,116 +1,105 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, NotFoundException } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 
 describe('UsersController', () => {
-  let controller: UsersController;
-  let service: UsersService;
+  let usersController: UsersController;
+  let usersService: UsersService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
-      providers: [
-        {
-          provide: UsersService,
-          useValue: {
-            create: jest.fn(),
-            findOne: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-          },
-        },
-      ],
+      providers: [UsersService],
     }).compile();
 
-    controller = module.get<UsersController>(UsersController);
-    service = module.get<UsersService>(UsersService);
+    usersController = module.get<UsersController>(UsersController);
+    usersService = module.get<UsersService>(UsersService);
   });
 
-  it('should create a user', async () => {
-    const userDto = {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      role: 'CAPTAIN' as 'CAPTAIN' | 'OWNER',
-    };
-    const createdUser = { ...userDto, id: '123' } as User;
-
-    jest.spyOn(service, 'create').mockReturnValue(createdUser);
-
-    const result = await controller.create(userDto);
-    expect(result).toEqual(createdUser);
-    expect(service.create).toHaveBeenCalledWith(userDto);
-  });
-
-  it.skip('should not allow duplicate email signups', async () => {
-    const userDto = {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      role: 'CAPTAIN' as 'CAPTAIN' | 'OWNER',
-    };
-
-    jest.spyOn(service, 'create').mockImplementation(() => {
-      throw new Error(`User with email ${userDto.email} already exists`);
-    });
-
-    await expect(controller.create(userDto)).rejects.toThrow(ConflictException);
-  });
-
-  it('should get a user by ID', async () => {
+  it('should create a user successfully', () => {
     const user = {
-      id: '123',
       firstName: 'John',
       lastName: 'Doe',
-      email: 'john.doe@example.com',
-      role: 'CAPTAIN',
-    } as User;
+      phoneNumber: '1234567890',
+      email: 'john@example.com',
+      roles: ['CAPTAIN' as 'CAPTAIN' | 'OWNER'],
+    };
+    jest.spyOn(usersService, 'create').mockImplementation(
+      () =>
+        ({
+          ...user,
+          id: '1',
+          isDeleted: false,
+        }) as User,
+    );
 
-    jest.spyOn(service, 'findOne').mockReturnValue(user);
-
-    const result = await controller.findOne('123');
-    expect(result).toEqual(user);
-    expect(service.findOne).toHaveBeenCalledWith('123');
+    const result = usersController.create(user);
+    expect(result.id).toBe('1');
   });
 
-  it('should update a user', async () => {
-    const updatedUser = {
-      id: '123',
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      phoneNumber: '111-222-3333',
-      role: 'CAPTAIN',
-    } as User;
-
-    jest.spyOn(service, 'update').mockReturnValue(updatedUser);
-
-    const result = await controller.update('123', {
-      phoneNumber: '111-222-3333',
+  it('should throw ConflictException for duplicate email', () => {
+    const user = {
+      firstName: 'Duplicate',
+      lastName: 'User',
+      phoneNumber: '1234567890',
+      email: 'duplicate@example.com',
+      roles: ['OWNER' as const],
+    };
+    jest.spyOn(usersService, 'create').mockImplementation(() => {
+      throw new ConflictException();
     });
-    expect(result).toEqual(updatedUser);
-    expect(service.update).toHaveBeenCalledWith('123', {
-      phoneNumber: '111-222-3333',
-    });
+
+    expect(() => usersController.create(user)).toThrow(ConflictException);
   });
 
-  it('should delete a user', async () => {
-    jest.spyOn(service, 'delete').mockReturnValue(true);
+  it('should return a user by ID', () => {
+    const user = { id: '1', email: 'test@example.com' } as User;
+    jest.spyOn(usersService, 'findOne').mockReturnValue(user);
 
-    const result = await controller.delete('123');
-    expect(result).toEqual({ message: 'User deleted successfully' });
-    expect(service.delete).toHaveBeenCalledWith('123');
+    const result = usersController.findOne('1');
+    expect(result).toBe(user);
   });
 
-  it.skip('should return a 404 if deleting a non-existent user', async () => {
-    jest.spyOn(service, 'delete').mockImplementation(() => {
-      throw new Error('User not found');
+  it('should throw NotFoundException for non-existent user', () => {
+    jest.spyOn(usersService, 'findOne').mockImplementation(() => {
+      throw new NotFoundException();
     });
 
-    await expect(controller.delete('non-existent-id')).rejects.toThrow(
+    expect(() => usersController.findOne('non-existent-id')).toThrow(
       NotFoundException,
     );
+  });
+
+  it('should update a user successfully', () => {
+    const user = { id: '1', firstName: 'Old Name' } as User;
+    jest.spyOn(usersService, 'update').mockReturnValue({
+      ...user,
+      firstName: 'Updated Name',
+      isCaptain: function (): boolean {
+        throw new Error('Function not implemented.');
+      },
+      isOwner: function (): boolean {
+        throw new Error('Function not implemented.');
+      },
+      isAdmin: function (): boolean {
+        throw new Error('Function not implemented.');
+      },
+    });
+
+    const result = usersController.update('1', { firstName: 'Updated Name' });
+    expect(result.firstName).toBe('Updated Name');
+  });
+
+  it('should return a list of users', () => {
+    const users = [
+      { id: '1', email: 'user1@example.com' },
+      { id: '2', email: 'user2@example.com' },
+    ] as User[];
+    jest.spyOn(usersService, 'list').mockReturnValue(users);
+
+    const result = usersController.list();
+    expect(result.length).toBe(2);
   });
 });

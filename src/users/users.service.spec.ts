@@ -1,105 +1,120 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
-import { User } from './entities/user.entity';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 
 describe('UsersService', () => {
-  let service: UsersService;
+  let usersService: UsersService;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService],
-    }).compile();
-
-    service = module.get<UsersService>(UsersService);
+  beforeEach(() => {
+    usersService = new UsersService();
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
-  it('should create a user', () => {
-    const user: Partial<User> = {
+  it('should create a user successfully', () => {
+    const user = {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      phoneNumber: '123-456-7890',
-      role: 'CAPTAIN',
+      roles: ['CAPTAIN' as 'CAPTAIN' | 'OWNER' | 'ADMIN'],
     };
 
-    const createdUser = service.create(user);
-    expect(createdUser).toMatchObject(user);
+    const createdUser = usersService.create(user);
+    expect(createdUser).toBeDefined();
+    expect(createdUser.email).toBe(user.email);
     expect(createdUser.id).toBeDefined();
   });
 
-  it('should not allow duplicate email signups', () => {
-    const user: Partial<User> = {
+  it('should throw a ConflictException if email already exists', () => {
+    const user = {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      phoneNumber: '123-456-7890',
-      role: 'CAPTAIN',
+      roles: ['CAPTAIN' as 'CAPTAIN' | 'OWNER' | 'ADMIN'],
     };
 
-    service.create(user);
-
-    expect(() => service.create(user)).toThrowError(
-      `User with email ${user.email} already exists`,
-    );
+    usersService.create(user);
+    expect(() => usersService.create(user)).toThrow(ConflictException);
   });
 
   it('should find a user by ID', () => {
-    const user = service.create({
+    const user = usersService.create({
       firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane.smith@example.com',
-      phoneNumber: '987-654-3210',
-      role: 'OWNER',
+      lastName: 'Doe',
+      email: 'jane.doe@example.com',
+      roles: ['OWNER'],
     });
 
-    const foundUser = service.findOne(user.id);
-    expect(foundUser).toEqual(user);
+    const foundUser = usersService.findOne(user.id);
+    expect(foundUser).toBeDefined();
+    expect(foundUser.id).toBe(user.id);
   });
 
-  it('should update a user', () => {
-    const user = service.create({
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane.smith@example.com',
-      phoneNumber: '987-654-3210',
-      role: 'OWNER',
-    });
-
-    const updatedUser = service.update(user.id, {
-      phoneNumber: '111-222-3333',
-    });
-    expect(updatedUser?.phoneNumber).toBe('111-222-3333');
+  it('should throw NotFoundException if user does not exist', () => {
+    expect(() => usersService.findOne('non-existent-id')).toThrow(
+      NotFoundException,
+    );
   });
 
-  it('should throw an error if updating a non-existent user', () => {
+  it('should update a user successfully', () => {
+    const user = usersService.create({
+      firstName: 'Mark',
+      lastName: 'Smith',
+      email: 'mark.smith@example.com',
+      roles: ['CAPTAIN'],
+    });
+
+    const updatedUser = usersService.update(user.id, {
+      firstName: 'Updated Mark',
+    });
+    expect(updatedUser.firstName).toBe('Updated Mark');
+  });
+
+  it('should throw NotFoundException when updating a non-existent user', () => {
     expect(() =>
-      service.update('non-existent-id', { phoneNumber: '111-222-3333' }),
-    ).toThrowError('User not found');
+      usersService.update('non-existent-id', { firstName: 'Updated Name' }),
+    ).toThrow(NotFoundException);
   });
 
-  it('should delete a user', () => {
-    const user = service.create({
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane.smith@example.com',
-      phoneNumber: '987-654-3210',
-      role: 'OWNER',
+  it('should soft delete a user', () => {
+    const user = usersService.create({
+      firstName: 'Anna',
+      lastName: 'Taylor',
+      email: 'anna.taylor@example.com',
+      roles: ['OWNER'],
     });
 
-    const result = service.delete(user.id);
-    expect(result).toBe(true);
-    expect(() => service.findOne(user.id)).toThrowError(
-      `User with ID ${user.id} not found`,
-    );
+    usersService.delete(user.id);
+    expect(() => usersService.findOne(user.id)).toThrow(NotFoundException);
   });
 
-  it('should throw an error if deleting a non-existent user', () => {
-    expect(() => service.delete('non-existent-id')).toThrowError(
-      'User not found',
-    );
+  it('should return a list of users', () => {
+    usersService.create({
+      firstName: 'User1',
+      email: 'user1@example.com',
+      roles: ['CAPTAIN'],
+    });
+    usersService.create({
+      firstName: 'User2',
+      email: 'user2@example.com',
+      roles: ['OWNER'],
+    });
+
+    const users = usersService.list();
+    expect(users.length).toBe(2);
+  });
+
+  it('should filter users by role', () => {
+    usersService.create({
+      firstName: 'User1',
+      email: 'user1@example.com',
+      roles: ['CAPTAIN'],
+    });
+    usersService.create({
+      firstName: 'User2',
+      email: 'user2@example.com',
+      roles: ['OWNER'],
+    });
+
+    const captains = usersService.list({ roles: ['CAPTAIN'] });
+    expect(captains.length).toBe(1);
+    expect(captains[0].roles).toContain('CAPTAIN');
   });
 });

@@ -11,7 +11,7 @@ read -p "Enter boat location: " location
 read -p "Enter rate willing to pay: " rateWillingToPay
 read -p "Enter owner IDs (comma-separated): " ownerIds
 read -p "Enter licenses required (comma-separated): " licenses
-read -p "Enter certifications required (comma-separated): " certifications
+read -p "Enter captain share certifications required (comma-separated): " certifications
 read -p "Enter boat make: " make
 read -p "Enter boat model: " model
 read -p "Enter boat year: " year
