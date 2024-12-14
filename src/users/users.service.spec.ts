@@ -146,6 +146,25 @@ describe('UsersService', () => {
     expect(users[0].id).toBe(user1.id);
   });
 
+  it('should exclude deleted users by default in list', () => {
+    const user1 = usersService.create({
+      firstName: 'Active User',
+      email: 'active@example.com',
+      roles: ['CAPTAIN'],
+    });
+
+    const user2 = usersService.create({
+      firstName: 'Deleted User',
+      email: 'deleted@example.com',
+      roles: ['OWNER'],
+    });
+
+    usersService.delete(user2.id);
+    const users = usersService.list();
+    expect(users.length).toBe(1);
+    expect(users[0].id).toBe(user1.id);
+  });
+
   it('should return a list of users', () => {
     usersService.create({
       firstName: 'User1',
