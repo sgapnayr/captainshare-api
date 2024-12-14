@@ -12,7 +12,7 @@ export class UsersService {
   private users: User[] = [];
 
   private validateRoles(roles: string[]): void {
-    const validRoles = ['CAPTAIN', 'OWNER'];
+    const validRoles = ['CAPTAIN', 'OWNER', 'ADMIN'];
     roles.forEach((role) => {
       if (!validRoles.includes(role)) {
         throw new BadRequestException(`Invalid role: ${role}`);
@@ -44,8 +44,15 @@ export class UsersService {
       email: user.email ?? '',
       phoneNumber: user.phoneNumber ?? '',
       availability: user.availability ?? [],
+      certifications: user.certifications ?? [],
+      preferredBoatTypes: user.preferredBoatTypes ?? [],
+      ratePerHour: user.ratePerHour ?? 0,
       isEmailVerified: false,
       onboardingComplete: false,
+      averageRating: 0,
+      totalReviews: 0,
+      referredBy: user.referredBy ?? '',
+      referralCode: user.referralCode ?? '',
       isCaptain: function (): boolean {
         throw new Error('Function not implemented.');
       },
@@ -71,10 +78,27 @@ export class UsersService {
 
   update(id: string, updateData: Partial<User>): User {
     const user = this.findOne(id);
+
     if (updateData.roles) {
       this.validateRoles(updateData.roles);
     }
+
     Object.assign(user, updateData, { updatedAt: new Date() });
+
+    if (updateData.certifications) {
+      user.certifications = Array.from(new Set(updateData.certifications));
+    }
+
+    if (updateData.preferredBoatTypes) {
+      user.preferredBoatTypes = Array.from(
+        new Set(updateData.preferredBoatTypes),
+      );
+    }
+
+    if (updateData.ratePerHour !== undefined) {
+      user.ratePerHour = updateData.ratePerHour;
+    }
+
     return user;
   }
 
@@ -86,10 +110,8 @@ export class UsersService {
 
   list(filters: Partial<User> = {}): User[] {
     return this.users.filter((user) => {
-      if (
-        filters.isDeleted !== undefined &&
-        user.isDeleted !== filters.isDeleted
-      ) {
+      const includeDeleted = filters.isDeleted === true;
+      if (!includeDeleted && user.isDeleted) {
         return false;
       }
       if (
@@ -121,9 +143,9 @@ export class UsersService {
     return user;
   }
 
-  addRole(id: string, role: 'CAPTAIN' | 'OWNER'): User {
+  addRole(id: string, role: 'CAPTAIN' | 'OWNER' | 'ADMIN'): User {
     const user = this.findOne(id);
-    if (!['CAPTAIN', 'OWNER'].includes(role)) {
+    if (!['CAPTAIN', 'OWNER', 'ADMIN'].includes(role)) {
       throw new BadRequestException(`Invalid role: ${role}`);
     }
     if (!user.roles.includes(role)) {
@@ -133,7 +155,7 @@ export class UsersService {
     return user;
   }
 
-  removeRole(id: string, role: 'CAPTAIN' | 'OWNER'): User {
+  removeRole(id: string, role: 'CAPTAIN' | 'OWNER' | 'ADMIN'): User {
     const user = this.findOne(id);
     if (!user.roles.includes(role)) {
       throw new BadRequestException(`User does not have the role: ${role}`);

@@ -1,15 +1,24 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:3000/users"
+# API URL
+API_URL="http://localhost:3000/users"
 
-echo "=== List All Users ==="
+# Optional filters
+read -p "Enter role filter (e.g., CAPTAIN, OWNER, ADMIN, or leave empty): " ROLE
+read -p "Include deleted users? (true/false, default false): " IS_DELETED
+read -p "Page number (default 1): " PAGE
+read -p "Page limit (default 10): " LIMIT
 
-response=$(curl -s "$BASE_URL")
+# Apply defaults if not provided
+IS_DELETED=${IS_DELETED:-false}
+PAGE=${PAGE:-1}
+LIMIT=${LIMIT:-10}
 
-if echo "$response" | jq . > /dev/null 2>&1; then
-  echo "Response (Formatted):"
-  echo "$response" | jq .
-else
-  echo "Invalid JSON Response:"
-  echo "$response"
-fi
+# Make API request
+curl -G "$API_URL" \
+  --data-urlencode "role=$ROLE" \
+  --data-urlencode "isDeleted=$IS_DELETED" \
+  --data-urlencode "page=$PAGE" \
+  --data-urlencode "limit=$LIMIT" | jq .
+
+echo -e "\nUsers listed." | jq .

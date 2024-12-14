@@ -13,5 +13,5 @@ if echo "$response" | jq . > /dev/null 2>&1; then
   echo "$response" | jq .
 else
   echo "Invalid JSON Response:"
-  echo "$response"
+  echo "$response" | jq .
 fi

@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Query,
+  HttpCode,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
@@ -19,6 +20,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
+  @HttpCode(201)
   create(@Body() createUserDto: CreateUserDto): User {
     return this.usersService.create(createUserDto);
   }
@@ -34,9 +36,9 @@ export class UsersController {
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string): { message: string } {
+  @HttpCode(204)
+  delete(@Param('id') id: string): void {
     this.usersService.delete(id);
-    return { message: 'User soft-deleted successfully' };
   }
 
   @Get()
@@ -49,7 +51,6 @@ export class UsersController {
     const filters: Partial<User> = {};
     if (role) filters.roles = [role];
     filters.isDeleted = isDeleted === 'true';
-
     return this.usersService.listWithPagination(filters, page, limit);
   }
 
@@ -75,5 +76,29 @@ export class UsersController {
     @Body('role') role: 'CAPTAIN' | 'OWNER',
   ): User {
     return this.usersService.removeRole(id, role);
+  }
+
+  @Patch(':id/certifications')
+  updateCertifications(
+    @Param('id') id: string,
+    @Body('certifications') certifications: string[],
+  ): User {
+    return this.usersService.update(id, { certifications });
+  }
+
+  @Patch(':id/preferred-boat-types')
+  updatePreferredBoatTypes(
+    @Param('id') id: string,
+    @Body('preferredBoatTypes') preferredBoatTypes: string[],
+  ): User {
+    return this.usersService.update(id, { preferredBoatTypes });
+  }
+
+  @Patch(':id/rate-per-hour')
+  updateRatePerHour(
+    @Param('id') id: string,
+    @Body('ratePerHour') ratePerHour: number,
+  ): User {
+    return this.usersService.update(id, { ratePerHour });
   }
 }

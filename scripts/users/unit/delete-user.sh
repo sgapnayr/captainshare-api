@@ -1,17 +1,12 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:3000/users"
+# API URL
+API_URL="http://localhost:3000/users"
 
-echo "=== Delete a User ==="
+# Get user ID
+read -p "Enter user ID to delete: " USER_ID
 
-read -p "Enter user ID: " id
+# Make API request
+curl -X DELETE "$API_URL/$USER_ID" | jq .
 
-response=$(curl -s -X DELETE "$BASE_URL/$id")
-
-if echo "$response" | jq . > /dev/null 2>&1; then
-  echo "Response (Formatted):"
-  echo "$response" | jq .
-else
-  echo "Invalid JSON Response:"
-  echo "$response"
-fi
+echo -e "\nUser deleted (soft delete)." | jq .
