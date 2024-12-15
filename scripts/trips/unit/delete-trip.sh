@@ -1,19 +1,11 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:3000/trips"
-
 echo "=== Delete a Trip ==="
+read -p "Enter Trip ID to delete: " tripId
 
-read -p "Enter trip ID: " tripId
+# Here we would normally send a DELETE request to your backend API
+# For now, we're just echoing the request
+echo "Deleting Trip ID: $tripId..."
 
-# Send the DELETE request
-response=$(curl -s -X DELETE "$BASE_URL/$tripId")
-
-# Print the response
-if echo "$response" | jq . > /dev/null 2>&1; then
-  echo "Trip Deleted Successfully (Formatted):"
-  echo "$response" | jq .
-else
-  echo "Failed to Delete Trip. Response:"
-  echo "$response"
-fi
+# Example curl request (replace with actual endpoint):
+# curl -X DELETE http://localhost:3000/trips/$tripId

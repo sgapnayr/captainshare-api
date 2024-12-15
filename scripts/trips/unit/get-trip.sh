@@ -1,19 +1,11 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:3000/trips"
+# Accepting user input for trip ID
+read -p "Enter Trip ID: " TRIP_ID
 
-echo "=== Get Trip by ID ==="
+# Send the request to get the trip details
+TRIP_DETAILS=$(curl -s -X GET "http://localhost:3000/trips/$TRIP_ID" \
+  -H "Content-Type: application/json")
 
-read -p "Enter trip ID: " tripId
-
-# Send the GET request
-response=$(curl -s -X GET "$BASE_URL/$tripId")
-
-# Print the response
-if echo "$response" | jq . > /dev/null 2>&1; then
-  echo "Trip Details (Formatted):"
-  echo "$response" | jq .
-else
-  echo "Failed to Fetch Trip. Response:"
-  echo "$response"
-fi
+# Format the response using jq
+echo "$TRIP_DETAILS" | jq .
