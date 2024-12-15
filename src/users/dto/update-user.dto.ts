@@ -4,7 +4,10 @@ import {
   IsArray,
   IsNumber,
   IsBoolean,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { AvailabilityDto } from './availability.dto';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -57,4 +60,14 @@ export class UpdateUserDto {
   @IsArray()
   @IsString({ each: true })
   roles?: ('CAPTAIN' | 'OWNER' | 'ADMIN')[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  preferredCaptains?: string[];
+
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => AvailabilityDto)
+  availability?: AvailabilityDto[];
 }

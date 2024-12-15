@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Review } from './entities/review.entity';
 
 @Injectable()
@@ -28,5 +28,14 @@ export class ReviewsService {
       (review) =>
         review.revieweeId === captainId && review.revieweeRole === 'CAPTAIN',
     );
+  }
+
+  flagReview(reviewId: string): Review {
+    const review = this.reviews.find((review) => review.id === reviewId);
+    if (!review) {
+      throw new NotFoundException(`Review with ID ${reviewId} not found`);
+    }
+    review.isFlagged = true;
+    return review;
   }
 }

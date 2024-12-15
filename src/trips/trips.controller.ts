@@ -5,85 +5,133 @@ import {
   Patch,
   Body,
   Param,
-  NotFoundException,
   Delete,
   BadRequestException,
+  NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { TripsService } from './trips.service';
+import { CreateTripDto } from './dto/create-trip.dto';
+import { UpdateTripDto } from './dto/update-trip.dto';
+import { AssignCaptainDto } from './dto/assign-captain.dto';
+import { CounterOfferDto } from './dto/counter-offer.dto';
+import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
 import { Trip } from './entities/trip.entity';
-import {
-  DEFAULT_TRIP_TYPE,
-  DEFAULT_TOTAL_PRICE,
-  DEFAULT_CAPTAIN_RATE,
-  DEFAULT_CAPTAIN_SHARE,
-} from './trips.constants';
 
 @Controller('trips')
 export class TripsController {
   constructor(private readonly tripsService: TripsService) {}
 
   @Post()
-  create(@Body() tripDto: Partial<Trip>): Trip {
+  async create(@Body() createTripDto: CreateTripDto): Promise<Trip> {
     try {
-      if (!tripDto.location) {
-        throw new BadRequestException('Location is required for a trip.');
-      }
-
-      const trip = {
-        ...tripDto,
-        startTime: new Date(tripDto.startTime!),
-        endTime: new Date(tripDto.endTime!),
-        tripType: tripDto.tripType || DEFAULT_TRIP_TYPE,
-        totalPrice: tripDto.totalPrice || DEFAULT_TOTAL_PRICE,
-        captainRate: tripDto.captainRate || DEFAULT_CAPTAIN_RATE,
-        captainShare: tripDto.captainShare || DEFAULT_CAPTAIN_SHARE,
-      };
-
-      return this.tripsService.create(trip);
+      return await this.tripsService.create(createTripDto);
     } catch (error) {
-      if (error.message.includes('already booked')) {
-        throw new BadRequestException(error.message);
+      if (error instanceof BadRequestException) {
+        throw error;
       }
       throw new InternalServerErrorException(
-        'An unexpected error occurred while creating the trip.',
+        'Error occurred while creating the trip.',
       );
     }
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Trip {
-    const trip = this.tripsService.findOne(id);
-    if (!trip) {
-      throw new NotFoundException(`Trip with ID ${id} not found.`);
+  async findOne(@Param('id') id: string): Promise<Trip> {
+    try {
+      return await this.tripsService.findOne(id);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException('Trip not found.');
+      }
+      throw new InternalServerErrorException(
+        'Error occurred while retrieving the trip.',
+      );
     }
-    return trip;
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateData: Partial<Trip>): Trip {
-    if (updateData.location && typeof updateData.location !== 'string') {
-      throw new BadRequestException('Invalid location.');
-    }
-
-    const trip = this.tripsService.update(id, updateData);
-    if (!trip) {
-      throw new NotFoundException(`Trip with ID ${id} not found.`);
-    }
-    return trip;
-  }
-
-  @Get()
-  list(): Trip[] {
-    return this.tripsService.list();
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string): void {
-    const trip = this.tripsService.findOne(id);
-    if (!trip) {
-      throw new NotFoundException(`Trip with ID ${id} not found.`);
+  async delete(@Param('id') id: string): Promise<void> {
+    try {
+      await this.tripsService.delete(id);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`Trip with ID ${id} not found.`);
+      }
+      throw new InternalServerErrorException(
+        'Error occurred while deleting the trip.',
+      );
     }
-    this.tripsService.delete(id);
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateTripDto: UpdateTripDto,
+  ): Promise<Trip> {
+    try {
+      return await this.tripsService.update(id, updateTripDto);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`Trip with ID ${id} not found.`);
+      }
+      throw new InternalServerErrorException(
+        'Error occurred while updating the trip.',
+      );
+    }
+  }
+
+  @Patch(':id/assign-captain')
+  async assignCaptain(
+    @Param('id') id: string,
+    @Body() assignCaptainDto: AssignCaptainDto,
+  ): Promise<Trip> {
+    try {
+      return await this.tripsService.assignCaptain(id, assignCaptainDto);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException('Trip or Captain not found.');
+      }
+      throw new InternalServerErrorException(
+        'Error occurred while assigning the captain.',
+      );
+    }
+  }
+
+  @Patch(':id/counteroffer')
+  async handleCounterOffer(
+    @Param('id') id: string,
+    @Body() counterOfferDto: CounterOfferDto,
+  ): Promise<Trip> {
+    try {
+      return await this.tripsService.handleCounterOffer(
+        id,
+        counterOfferDto.counterRate,
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`Trip with ID ${id} not found.`);
+      }
+      throw new InternalServerErrorException(
+        'Error occurred while handling the counteroffer.',
+      );
+    }
+  }
+
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() updateTripStatusDto: UpdateTripStatusDto,
+  ): Promise<Trip> {
+    try {
+      return await this.tripsService.updateStatus(id, updateTripStatusDto);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`Trip with ID ${id} not found.`);
+      }
+      throw new InternalServerErrorException(
+        'Error occurred while updating the trip status.',
+      );
+    }
   }
 }

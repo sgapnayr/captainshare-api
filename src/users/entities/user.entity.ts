@@ -34,6 +34,7 @@ export class User {
   userLocation?: string;
   certifications?: string[];
   preferredBoatTypes?: string[];
+  preferredCaptains?: string[];
 
   averageRating?: number;
   totalReviews?: number;

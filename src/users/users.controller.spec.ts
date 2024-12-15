@@ -114,6 +114,13 @@ describe('UsersController', () => {
       day: 'Monday',
       startTime: '09:00',
       endTime: '17:00',
+      validateTimeRange: function ():
+        | true
+        | 'endTime must be greater than startTime.' {
+        const start = parseInt(this.startTime.replace(':', ''), 10);
+        const end = parseInt(this.endTime.replace(':', ''), 10);
+        return start < end || 'endTime must be greater than startTime.';
+      },
     };
 
     jest.spyOn(usersService, 'addAvailability').mockReturnValue({
@@ -139,17 +146,26 @@ describe('UsersController', () => {
   });
 
   it('should throw BadRequestException if adding availability to a non-captain', () => {
+    const availability = {
+      day: 'Monday',
+      startTime: '09:00',
+      endTime: '17:00',
+      validateTimeRange: function ():
+        | true
+        | 'endTime must be greater than startTime.' {
+        return this.startTime < this.endTime
+          ? true
+          : 'endTime must be greater than startTime.';
+      },
+    };
+
     jest.spyOn(usersService, 'addAvailability').mockImplementation(() => {
       throw new BadRequestException('Only captains can set availability');
     });
 
-    expect(() =>
-      usersController.addAvailability('2', {
-        day: 'Monday',
-        startTime: '09:00',
-        endTime: '17:00',
-      }),
-    ).toThrow(BadRequestException);
+    expect(() => usersController.addAvailability('2', availability)).toThrow(
+      BadRequestException,
+    );
   });
 
   it('should return a list of users', () => {
@@ -159,7 +175,7 @@ describe('UsersController', () => {
     ] as User[];
     jest.spyOn(usersService, 'listWithPagination').mockReturnValue(users);
 
-    const result = usersController.list();
+    const result = usersController.list({ page: 1, limit: 10 });
     expect(result).toEqual(users);
     expect(usersService.listWithPagination).toHaveBeenCalled();
   });
@@ -226,5 +242,31 @@ describe('UsersController', () => {
     expect(() => usersController.removeRole('1', 'ADMIN' as any)).toThrow(
       BadRequestException,
     );
+  });
+
+  it('should update certifications for a user', () => {
+    const user = { id: '1', certifications: [] } as User;
+    jest.spyOn(usersService, 'update').mockReturnValue({
+      ...user,
+      certifications: ['CPR', 'Boating Safety'],
+      isCaptain: function (): boolean {
+        throw new Error('Function not implemented.');
+      },
+      isOwner: function (): boolean {
+        throw new Error('Function not implemented.');
+      },
+      isAdmin: function (): boolean {
+        throw new Error('Function not implemented.');
+      },
+    });
+
+    const result = usersController.updateCertifications('1', [
+      'CPR',
+      'Boating Safety',
+    ]);
+    expect(result.certifications).toContain('CPR');
+    expect(usersService.update).toHaveBeenCalledWith('1', {
+      certifications: ['CPR', 'Boating Safety'],
+    });
   });
 });

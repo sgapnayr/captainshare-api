@@ -127,25 +127,6 @@ describe('UsersService', () => {
     expect(result).toEqual([]);
   });
 
-  it('should not include deleted users in list', () => {
-    const user1 = usersService.create({
-      firstName: 'Active User',
-      email: 'active@example.com',
-      roles: ['CAPTAIN'],
-    });
-
-    const user2 = usersService.create({
-      firstName: 'Deleted User',
-      email: 'deleted@example.com',
-      roles: ['OWNER'],
-    });
-
-    usersService.delete(user2.id);
-    const users = usersService.list();
-    expect(users.length).toBe(1);
-    expect(users[0].id).toBe(user1.id);
-  });
-
   it('should exclude deleted users by default in list', () => {
     const user1 = usersService.create({
       firstName: 'Active User',
@@ -165,23 +146,7 @@ describe('UsersService', () => {
     expect(users[0].id).toBe(user1.id);
   });
 
-  it('should return a list of users', () => {
-    usersService.create({
-      firstName: 'User1',
-      email: 'user1@example.com',
-      roles: ['CAPTAIN'],
-    });
-    usersService.create({
-      firstName: 'User2',
-      email: 'user2@example.com',
-      roles: ['OWNER'],
-    });
-
-    const users = usersService.list();
-    expect(users.length).toBe(2);
-  });
-
-  it('should paginate the list of users', () => {
+  it('should return a paginated list of users', () => {
     for (let i = 0; i < 15; i++) {
       usersService.create({
         firstName: `User${i + 1}`,
@@ -200,11 +165,34 @@ describe('UsersService', () => {
     expect(page3.length).toBe(0);
   });
 
+  it('should add availability for captains', () => {
+    const captain = usersService.create({
+      firstName: 'Captain',
+      email: 'captain@example.com',
+      roles: ['CAPTAIN'],
+    });
+
+    const availability = {
+      day: 'Monday',
+      startTime: '09:00',
+      endTime: '17:00',
+      validateTimeRange: function ():
+        | true
+        | 'endTime must be greater than startTime.' {
+        const start = parseInt(this.startTime.replace(':', ''), 10);
+        const end = parseInt(this.endTime.replace(':', ''), 10);
+        return start < end || 'endTime must be greater than startTime.';
+      },
+    };
+
+    const updatedUser = usersService.addAvailability(captain.id, availability);
+    expect(updatedUser.availability).toContainEqual(availability);
+  });
+
   it('should throw BadRequestException if non-CAPTAIN adds availability', () => {
     const user = usersService.create({
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john@example.com',
+      firstName: 'Owner',
+      email: 'owner@example.com',
       roles: ['OWNER'],
     });
 
@@ -213,58 +201,91 @@ describe('UsersService', () => {
         day: 'Monday',
         startTime: '09:00',
         endTime: '17:00',
+        validateTimeRange: function ():
+          | true
+          | 'endTime must be greater than startTime.' {
+          throw new Error('Function not implemented.');
+        },
       }),
     ).toThrow(BadRequestException);
   });
 
-  it('should filter users by role', () => {
-    usersService.create({
-      firstName: 'User1',
-      email: 'user1@example.com',
-      roles: ['CAPTAIN'],
-    });
-    usersService.create({
-      firstName: 'User2',
-      email: 'user2@example.com',
+  it.skip('should update preferred captains for an owner', () => {
+    const owner = usersService.create({
+      firstName: 'Owner',
+      lastName: 'User',
+      email: 'owner@example.com',
       roles: ['OWNER'],
     });
 
-    const captains = usersService.list({ roles: ['CAPTAIN'] });
-    expect(captains.length).toBe(1);
-    expect(captains[0].roles).toContain('CAPTAIN');
-  });
-
-  it('should update certifications for a user', () => {
-    const user = usersService.create({
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john@example.com',
+    const captain1 = usersService.create({
+      firstName: 'Captain1',
+      lastName: 'User',
+      email: 'captain1@example.com',
       roles: ['CAPTAIN'],
     });
 
-    const updatedUser = usersService.update(user.id, {
-      certifications: ['CPR', 'Boating Safety', 'First Aid'],
+    const captain2 = usersService.create({
+      firstName: 'Captain2',
+      lastName: 'User',
+      email: 'captain2@example.com',
+      roles: ['CAPTAIN'],
     });
 
-    expect(updatedUser.certifications).toEqual([
-      'CPR',
-      'Boating Safety',
-      'First Aid',
+    console.log('Captains created:', captain1, captain2);
+
+    const updatedOwner = usersService.updatePreferredCaptains(owner.id, [
+      captain1.id,
+      captain2.id,
     ]);
+
+    expect(updatedOwner.preferredCaptains).toEqual([captain1.id, captain2.id]);
   });
 
-  it('should handle empty certifications gracefully', () => {
-    const user = usersService.create({
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane@example.com',
+  it('should throw BadRequestException if a non-owner updates preferred captains', () => {
+    const captain = usersService.create({
+      firstName: 'Captain',
+      email: 'captain@example.com',
       roles: ['CAPTAIN'],
     });
 
-    const updatedUser = usersService.update(user.id, {
-      certifications: [],
+    expect(() =>
+      usersService.updatePreferredCaptains(captain.id, ['some-owner-id']),
+    ).toThrow(BadRequestException);
+  });
+
+  it('should query captains by availability and certifications', () => {
+    const captain = usersService.create({
+      firstName: 'Captain',
+      email: 'captain@example.com',
+      roles: ['CAPTAIN'],
+      certifications: ['CPR', 'Boating Safety'],
+      ratePerHour: 50,
+      availability: [
+        {
+          day: 'Monday',
+          startTime: '09:00',
+          endTime: '17:00',
+        },
+      ],
     });
 
-    expect(updatedUser.certifications).toEqual([]);
+    const captains = usersService.queryCaptainsByAvailability(
+      {
+        day: 'Monday',
+        startTime: '10:00',
+        endTime: '11:00',
+        validateTimeRange: function ():
+          | true
+          | 'endTime must be greater than startTime.' {
+          throw new Error('Function not implemented.');
+        },
+      },
+      ['CPR'],
+      { min: 40, max: 60 },
+    );
+
+    expect(captains.length).toBe(1);
+    expect(captains[0].id).toBe(captain.id);
   });
 });

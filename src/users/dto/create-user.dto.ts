@@ -1,4 +1,11 @@
-import { IsString, IsEmail, IsArray, IsOptional, IsIn } from 'class-validator';
+import {
+  IsArray,
+  IsEmail,
+  IsOptional,
+  IsString,
+  IsNumber,
+  ArrayUnique,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -10,11 +17,33 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
+  @IsOptional()
   @IsString()
-  phoneNumber: string;
+  phoneNumber?: string;
 
   @IsArray()
-  @IsIn(['CAPTAIN', 'OWNER', 'ADMIN'], { each: true })
+  @ArrayUnique()
+  roles: ('CAPTAIN' | 'OWNER' | 'ADMIN')[];
+
   @IsOptional()
-  roles?: ('CAPTAIN' | 'OWNER' | 'ADMIN')[];
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  preferredBoatTypes?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  certifications?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  preferredCaptains?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  ratePerHour?: number;
 }

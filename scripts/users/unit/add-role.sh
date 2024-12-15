@@ -1,17 +1,12 @@
 #!/bin/bash
+# Script to add a role to an existing user
 
-# API URL
-API_URL="http://localhost:3000/users"
+echo "=== Add Role to User ==="
+read -p "User ID: " userId
+read -p "Role to Add (CAPTAIN, OWNER, ADMIN): " role
 
-# Get user ID and role
-read -p "Enter user ID: " USER_ID
-read -p "Enter role to add (CAPTAIN/OWNER): " ROLE
-
-# Make API request
-curl -X PATCH "$API_URL/$USER_ID/roles/add" \
+curl -X PATCH http://localhost:3000/users/$userId/roles/add \
   -H "Content-Type: application/json" \
   -d '{
-    "role": "'"$ROLE"'"
+    "role": "'"$role"'"
   }' | jq .
-
-echo -e "\nRole added to user." | jq .

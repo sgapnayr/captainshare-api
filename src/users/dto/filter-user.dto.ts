@@ -1,4 +1,4 @@
-import { IsOptional, IsBoolean, IsIn } from 'class-validator';
+import { IsOptional, IsBoolean, IsIn, IsNumber } from 'class-validator';
 
 export class FilterUsersDto {
   @IsOptional()
@@ -8,4 +8,12 @@ export class FilterUsersDto {
   @IsOptional()
   @IsBoolean()
   isDeleted?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  page?: number;
+
+  @IsOptional()
+  @IsNumber()
+  limit?: number;
 }

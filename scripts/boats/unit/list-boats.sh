@@ -1,9 +1,7 @@
 #!/bin/bash
-
-BASE_URL="http://localhost:3000/boats"
+# Script to list all boats
 
 echo "=== List All Boats ==="
 
-response=$(curl -s "$BASE_URL")
-echo "Response:"
-echo "$response" | jq .
+curl -X GET http://localhost:3000/boats \
+  -H "Content-Type: application/json" | jq .

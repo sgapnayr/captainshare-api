@@ -20,13 +20,60 @@ export class UsersService {
     });
   }
 
+  private isCaptain(userId: string): boolean {
+    const user = this.findOne(userId);
+    return user.roles.includes('CAPTAIN');
+  }
+
+  private isOwner(userId: string): boolean {
+    const user = this.findOne(userId);
+    return user.roles.includes('OWNER');
+  }
+
+  private validatePreferredCaptains(captains: string[]): void {
+    captains.forEach((captainId) => {
+      const captain = this.findOne(captainId);
+      console.log(
+        `Validating captain ID: ${captainId}, Roles: ${captain.roles}`,
+      ); // Debug log
+      if (!captain.roles.includes('CAPTAIN')) {
+        throw new BadRequestException(
+          `User with ID ${captainId} is not a valid captain.`,
+        );
+      }
+    });
+  }
+
+  private paginate<T>(items: T[], page: number, limit: number): T[] {
+    return items.slice((page - 1) * limit, page * limit);
+  }
+
+  private validateAvailabilityConflicts(
+    userId: string,
+    availability: AvailabilityDto,
+  ): void {
+    const user = this.findOne(userId);
+    const conflict = user.availability?.some(
+      (slot) =>
+        slot.day === availability.day &&
+        slot.startTime < availability.endTime &&
+        slot.endTime > availability.startTime,
+    );
+
+    if (conflict) {
+      throw new ConflictException(
+        'The availability slot conflicts with an existing slot.',
+      );
+    }
+  }
+
   create(user: Partial<User>): User {
     const existingUser = this.users.find(
       (u) => u.email === user.email && !u.isDeleted,
     );
     if (existingUser) {
       throw new ConflictException(
-        `User with email ${user.email} already exists`,
+        `User with email ${user.email} already exists.`,
       );
     }
 
@@ -46,6 +93,7 @@ export class UsersService {
       availability: user.availability ?? [],
       certifications: user.certifications ?? [],
       preferredBoatTypes: user.preferredBoatTypes ?? [],
+      preferredCaptains: user.preferredCaptains ?? [],
       ratePerHour: user.ratePerHour ?? 0,
       isEmailVerified: false,
       onboardingComplete: false,
@@ -71,7 +119,7 @@ export class UsersService {
   findOne(id: string): User {
     const user = this.users.find((u) => u.id === id && !u.isDeleted);
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new NotFoundException(`User with ID ${id} not found.`);
     }
     return user;
   }
@@ -95,8 +143,11 @@ export class UsersService {
       );
     }
 
-    if (updateData.ratePerHour !== undefined) {
-      user.ratePerHour = updateData.ratePerHour;
+    if (updateData.preferredCaptains) {
+      this.validatePreferredCaptains(updateData.preferredCaptains);
+      user.preferredCaptains = Array.from(
+        new Set(updateData.preferredCaptains),
+      );
     }
 
     return user;
@@ -130,14 +181,18 @@ export class UsersService {
     limit: number,
   ): User[] {
     const filteredUsers = this.list(filters);
-    return filteredUsers.slice((page - 1) * limit, page * limit);
+    return this.paginate(filteredUsers, page, limit);
   }
 
   addAvailability(id: string, availability: AvailabilityDto): User {
     const user = this.findOne(id);
-    if (!user.roles.includes('CAPTAIN')) {
-      throw new BadRequestException('Only captains can set availability');
+
+    if (!this.isCaptain(id)) {
+      throw new BadRequestException('Only captains can set availability.');
     }
+
+    this.validateAvailabilityConflicts(id, availability);
+
     user.availability = [...(user.availability || []), availability];
     user.updatedAt = new Date();
     return user;
@@ -145,9 +200,11 @@ export class UsersService {
 
   addRole(id: string, role: 'CAPTAIN' | 'OWNER' | 'ADMIN'): User {
     const user = this.findOne(id);
+
     if (!['CAPTAIN', 'OWNER', 'ADMIN'].includes(role)) {
       throw new BadRequestException(`Invalid role: ${role}`);
     }
+
     if (!user.roles.includes(role)) {
       user.roles.push(role);
       user.updatedAt = new Date();
@@ -157,11 +214,55 @@ export class UsersService {
 
   removeRole(id: string, role: 'CAPTAIN' | 'OWNER' | 'ADMIN'): User {
     const user = this.findOne(id);
+
     if (!user.roles.includes(role)) {
       throw new BadRequestException(`User does not have the role: ${role}`);
     }
+
     user.roles = user.roles.filter((r) => r !== role);
     user.updatedAt = new Date();
     return user;
+  }
+
+  updatePreferredCaptains(userId: string, captains: string[]): User {
+    const user = this.findOne(userId);
+
+    if (!this.isOwner(userId)) {
+      throw new BadRequestException(
+        'Only owners can manage preferred captains.',
+      );
+    }
+
+    this.validatePreferredCaptains(captains);
+
+    user.preferredCaptains = Array.from(new Set(captains));
+    user.updatedAt = new Date();
+    return user;
+  }
+
+  queryCaptainsByAvailability(
+    availability: AvailabilityDto,
+    certifications: string[] = [],
+    rateRange?: { min: number; max: number },
+  ): User[] {
+    return this.list({ roles: ['CAPTAIN'] }).filter((captain) => {
+      const matchesAvailability = captain.availability?.some(
+        (slot) =>
+          slot.day === availability.day &&
+          slot.startTime < availability.endTime &&
+          slot.endTime > availability.startTime,
+      );
+
+      const matchesCertifications =
+        certifications.length === 0 ||
+        certifications.every((cert) => captain.certifications?.includes(cert));
+
+      const matchesRate =
+        !rateRange ||
+        (captain.ratePerHour >= rateRange.min &&
+          captain.ratePerHour <= rateRange.max);
+
+      return matchesAvailability && matchesCertifications && matchesRate;
+    });
   }
 }

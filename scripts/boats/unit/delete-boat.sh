@@ -1,11 +1,12 @@
 #!/bin/bash
-
-BASE_URL="http://localhost:3000/boats"
+# Script to delete a boat
 
 echo "=== Delete a Boat ==="
+read -p "Boat ID: " boatId
+read -p "User ID: " userId
 
-read -p "Enter boat ID: " id
-
-response=$(curl -s -X DELETE "$BASE_URL/$id")
-echo "Response:"
-echo "$response" | jq .
+curl -X DELETE http://localhost:3000/boats/"$boatId" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "'"$userId"'"
+  }' | jq .

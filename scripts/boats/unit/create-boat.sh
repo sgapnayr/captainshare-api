@@ -1,46 +1,39 @@
 #!/bin/bash
-
-BASE_URL="http://localhost:3000/boats"
+# Script to create a new boat
 
 echo "=== Create a New Boat ==="
+read -p "Name: " name
+read -p "Type (e.g., Yacht, Fishing Boat): " type
+read -p "Capacity: " capacity
+read -p "Location: " location
+read -p "License Required (comma-separated, e.g., USCG): " licenseRequired
+read -p "Captain Certifications Required (comma-separated, e.g., AdvancedSailing): " certifications
+read -p "Rate Willing to Pay: " rate
+read -p "Make: " make
+read -p "Model: " model
+read -p "Year: " year
+read -p "Color: " color
+read -p "HIN (Optional): " hin
+read -p "Commercial Use (true/false, default false): " commercialUse
+read -p "User Role (OWNER/ADMIN): " userRole
+read -p "User ID: " userId
 
-read -p "Enter boat name: " name
-read -p "Enter boat type: " type
-read -p "Enter boat capacity: " capacity
-read -p "Enter boat location: " location
-read -p "Enter rate willing to pay: " rateWillingToPay
-read -p "Enter owner IDs (comma-separated): " ownerIds
-read -p "Enter licenses required (comma-separated): " licenses
-read -p "Enter captain share certifications required (comma-separated): " certifications
-read -p "Enter boat make: " make
-read -p "Enter boat model: " model
-read -p "Enter boat year: " year
-read -p "Enter boat color: " color
-
-data=$(cat <<EOF
-{
-  "name": "$name",
-  "type": "$type",
-  "capacity": $capacity,
-  "location": "$location",
-  "rateWillingToPay": $rateWillingToPay,
-  "ownerIds": [$(echo $ownerIds | sed 's/,/","/g' | sed 's/^/"/' | sed 's/$/"/')],
-  "licenseRequired": [$(echo $licenses | sed 's/,/","/g' | sed 's/^/"/' | sed 's/$/"/')],
-  "captainShareCertificationsRequired": [$(echo $certifications | sed 's/,/","/g' | sed 's/^/"/' | sed 's/$/"/')],
-  "make": "$make",
-  "model": "$model",
-  "year": $year,
-  "color": "$color"
-}
-EOF
-)
-
-response=$(curl -s -X POST "$BASE_URL" -H "Content-Type: application/json" -d "$data")
-
-if echo "$response" | jq . > /dev/null 2>&1; then
-  echo "Response (Formatted):"
-  echo "$response" | jq .
-else
-  echo "Invalid JSON Response:"
-  echo "$response"
-fi
+curl -X POST http://localhost:3000/boats \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "'"$name"'",
+    "type": "'"$type"'",
+    "capacity": '"$capacity"',
+    "location": "'"$location"'",
+    "licenseRequired": ["'"$(echo $licenseRequired | sed "s/,/\",\"/g")"'"],
+    "captainShareCertificationsRequired": ["'"$(echo $certifications | sed "s/,/\",\"/g")"'"],
+    "rateWillingToPay": '"$rate"',
+    "make": "'"$make"'",
+    "model": "'"$model"'",
+    "year": '"$year"',
+    "color": "'"$color"'",
+    "hin": "'"$hin"'",
+    "commercialUse": '"${commercialUse:-false}"',
+    "userRole": "'"$userRole"'",
+    "userId": "'"$userId"'"
+  }' | jq .

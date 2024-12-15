@@ -1,18 +1,35 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
 import { TripsController } from './trips.controller';
 import { TripsService } from './trips.service';
-import { Trip } from './entities/trip.entity';
-import {
-  DEFAULT_CAPTAIN_RATE,
-  DEFAULT_TOTAL_PRICE,
-  CAPTAIN_FEE_PERCENTAGE,
-  OWNER_FEE_PERCENTAGE,
-  DEFAULT_CAPTAIN_SHARE,
-} from './trips.constants';
+import * as request from 'supertest';
+import { TripStatus } from './entities/trip.entity';
+import { NotFoundException } from '@nestjs/common';
 
 describe('TripsController', () => {
-  let controller: TripsController;
-  let service: jest.Mocked<TripsService>;
+  let app: INestApplication;
+  let service: TripsService;
+
+  const mockTrip = {
+    id: '1',
+    boatId: 'boat1',
+    ownerId: 'owner1',
+    captainId: 'captain1',
+    status: TripStatus.PROPOSED,
+    bookingType: 'OWNER_TRIP',
+    createdAt: new Date('2024-12-14T23:50:03.547Z').toISOString(), // Convert Date to ISO string
+    updatedAt: new Date('2024-12-14T23:50:03.547Z').toISOString(), // Convert Date to ISO string
+    location: { latitude: 30.2672, longitude: -97.7431 },
+  };
+
+  const mockCreateTripDto = {
+    boatId: 'boat1',
+    ownerId: 'owner1',
+    bookingType: 'OWNER_TRIP',
+    startTime: '2024-12-10T10:00:00Z',
+    endTime: '2024-12-10T12:00:00Z',
+    location: { latitude: 30.2672, longitude: -97.7431 },
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -21,219 +38,124 @@ describe('TripsController', () => {
         {
           provide: TripsService,
           useValue: {
-            create: jest.fn(),
-            findOne: jest.fn(),
-            list: jest.fn(),
-            update: jest.fn(),
+            create: jest.fn().mockResolvedValue(mockTrip),
+            findOne: jest.fn().mockResolvedValue(mockTrip),
+            update: jest.fn().mockResolvedValue(mockTrip),
+            delete: jest.fn().mockResolvedValue(undefined),
+            assignCaptain: jest.fn().mockResolvedValue(mockTrip),
+            handleCounterOffer: jest.fn().mockResolvedValue(mockTrip),
+            updateStatus: jest.fn().mockResolvedValue(mockTrip),
+            filter: jest.fn().mockResolvedValue([mockTrip]),
           },
         },
       ],
     }).compile();
 
-    controller = module.get<TripsController>(TripsController);
-    service = module.get(TripsService) as jest.Mocked<TripsService>;
+    app = module.createNestApplication();
+    await app.init();
+    service = module.get<TripsService>(TripsService);
   });
 
-  it('should create an owner trip correctly', async () => {
-    const tripDto = {
-      boatId: 'boat123',
-      captainId: 'captain123',
-      ownerId: 'owner123',
-      startTime: new Date('2024-12-15T09:00:00.000Z'),
-      endTime: new Date('2024-12-15T12:00:00.000Z'),
-      status: 'PENDING' as const,
-      tripType: 'OWNER_TRIP' as const,
-      location: 'Miami', // New field
-    };
-
-    const durationHours = 3;
-    const rawCost = DEFAULT_CAPTAIN_RATE * durationHours;
-    const ownerFee = rawCost * OWNER_FEE_PERCENTAGE;
-    const captainFee = rawCost * CAPTAIN_FEE_PERCENTAGE;
-
-    const createdTrip: Trip = {
-      ...tripDto,
-      id: 'trip123',
-      startTime: new Date(tripDto.startTime),
-      endTime: new Date(tripDto.endTime),
-      durationHours,
-      captainRate: DEFAULT_CAPTAIN_RATE,
-      captainEarnings: rawCost,
-      ownerRevenue: 0,
-      captainFee,
-      ownerFee,
-      netCaptainEarnings: rawCost - captainFee,
-      netOwnerRevenue: 0,
-      platformRevenue: ownerFee + captainFee,
-      totalCostToOwner: rawCost + ownerFee,
-      tripType: 'OWNER_TRIP',
-      location: 'Miami', // New field
-    };
-
-    service.create.mockReturnValue(createdTrip);
-
-    const result = await controller.create(tripDto);
-    expect(result.location).toBe('Miami'); // Validate location
-    expect(result.startTime).toBeInstanceOf(Date);
-    expect(result.endTime).toBeInstanceOf(Date);
-    expect(result.durationHours).toBe(durationHours);
-    expect(result.captainEarnings).toBeCloseTo(rawCost);
-    expect(result.ownerRevenue).toBe(0);
-    expect(result.captainFee).toBeCloseTo(captainFee);
-    expect(result.ownerFee).toBeCloseTo(ownerFee);
-    expect(result.netCaptainEarnings).toBeCloseTo(rawCost - captainFee);
-    expect(result.netOwnerRevenue).toBe(0);
-    expect(result.platformRevenue).toBeCloseTo(ownerFee + captainFee);
-    expect(result.totalCostToOwner).toBeCloseTo(rawCost + ownerFee);
+  it('should be defined', () => {
+    expect(app).toBeDefined();
   });
 
-  it('should create a leased trip correctly', async () => {
-    const tripDto = {
-      boatId: 'boat123',
-      captainId: 'captain123',
-      ownerId: 'owner123',
-      startTime: new Date('2024-12-15T09:00:00.000Z'),
-      endTime: new Date('2024-12-15T12:00:00.000Z'),
-      status: 'PENDING' as const,
-      tripType: 'LEASED_TRIP' as const,
-      captainShare: DEFAULT_CAPTAIN_SHARE,
-      location: 'Key West', // New field
-    };
+  describe('POST /trips', () => {
+    it('should create a new trip', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/trips')
+        .send(mockCreateTripDto)
+        .expect(201);
 
-    const createdTrip: Trip = {
-      ...tripDto,
-      id: 'trip124',
-      startTime: new Date(tripDto.startTime),
-      endTime: new Date(tripDto.endTime),
-      durationHours: 3,
-      captainRate: DEFAULT_CAPTAIN_RATE,
-      totalPrice: DEFAULT_TOTAL_PRICE,
-      captainEarnings: DEFAULT_TOTAL_PRICE * DEFAULT_CAPTAIN_SHARE,
-      ownerRevenue: DEFAULT_TOTAL_PRICE * (1 - DEFAULT_CAPTAIN_SHARE),
-      captainFee:
-        DEFAULT_TOTAL_PRICE * DEFAULT_CAPTAIN_SHARE * CAPTAIN_FEE_PERCENTAGE,
-      ownerFee:
-        DEFAULT_TOTAL_PRICE *
-        (1 - DEFAULT_CAPTAIN_SHARE) *
-        OWNER_FEE_PERCENTAGE,
-      netCaptainEarnings:
-        DEFAULT_TOTAL_PRICE * DEFAULT_CAPTAIN_SHARE -
-        DEFAULT_TOTAL_PRICE * DEFAULT_CAPTAIN_SHARE * CAPTAIN_FEE_PERCENTAGE,
-      netOwnerRevenue:
-        DEFAULT_TOTAL_PRICE * (1 - DEFAULT_CAPTAIN_SHARE) -
-        DEFAULT_TOTAL_PRICE *
-          (1 - DEFAULT_CAPTAIN_SHARE) *
-          OWNER_FEE_PERCENTAGE,
-      platformRevenue:
-        DEFAULT_TOTAL_PRICE * DEFAULT_CAPTAIN_SHARE * CAPTAIN_FEE_PERCENTAGE +
-        DEFAULT_TOTAL_PRICE *
-          (1 - DEFAULT_CAPTAIN_SHARE) *
-          OWNER_FEE_PERCENTAGE,
-      tripType: 'LEASED_TRIP',
-      location: 'Key West', // New field
-    };
+      expect(response.body).toEqual(mockTrip);
+    });
 
-    service.create.mockReturnValue(createdTrip);
+    it('should handle errors on create', async () => {
+      service.create = jest
+        .fn()
+        .mockRejectedValue(new Error('Internal Server Error'));
 
-    const result = await controller.create(tripDto);
-    expect(result.location).toBe('Key West'); // Validate location
-    expect(result.startTime).toBeInstanceOf(Date);
-    expect(result.endTime).toBeInstanceOf(Date);
-    expect(result.durationHours).toBe(3);
-    expect(result.captainEarnings).toBeCloseTo(
-      DEFAULT_TOTAL_PRICE * DEFAULT_CAPTAIN_SHARE,
-    );
-    expect(result.ownerRevenue).toBeCloseTo(
-      DEFAULT_TOTAL_PRICE * (1 - DEFAULT_CAPTAIN_SHARE),
-    );
-    expect(result.captainFee).toBeCloseTo(
-      DEFAULT_TOTAL_PRICE * DEFAULT_CAPTAIN_SHARE * CAPTAIN_FEE_PERCENTAGE,
-    );
-    expect(result.ownerFee).toBeCloseTo(
-      DEFAULT_TOTAL_PRICE * (1 - DEFAULT_CAPTAIN_SHARE) * OWNER_FEE_PERCENTAGE,
-    );
-    expect(result.netCaptainEarnings).toBeCloseTo(
-      DEFAULT_TOTAL_PRICE * DEFAULT_CAPTAIN_SHARE -
-        DEFAULT_TOTAL_PRICE * DEFAULT_CAPTAIN_SHARE * CAPTAIN_FEE_PERCENTAGE,
-    );
-    expect(result.netOwnerRevenue).toBeCloseTo(
-      DEFAULT_TOTAL_PRICE * (1 - DEFAULT_CAPTAIN_SHARE) -
-        DEFAULT_TOTAL_PRICE *
-          (1 - DEFAULT_CAPTAIN_SHARE) *
-          OWNER_FEE_PERCENTAGE,
-    );
-    expect(result.platformRevenue).toBeCloseTo(
-      DEFAULT_TOTAL_PRICE * DEFAULT_CAPTAIN_SHARE * CAPTAIN_FEE_PERCENTAGE +
-        DEFAULT_TOTAL_PRICE *
-          (1 - DEFAULT_CAPTAIN_SHARE) *
-          OWNER_FEE_PERCENTAGE,
-    );
+      const response = await request(app.getHttpServer())
+        .post('/trips')
+        .send(mockCreateTripDto)
+        .expect(500);
+
+      expect(response.body.message).toBe(
+        'Error occurred while creating the trip.',
+      );
+    });
+
+    it('should return a 404 if trip not found', async () => {
+      service.findOne = jest
+        .fn()
+        .mockRejectedValue(new NotFoundException('Trip not found'));
+
+      const response = await request(app.getHttpServer())
+        .get('/trips/1')
+        .expect(404);
+
+      expect(response.body.message).toBe('Trip not found.');
+    });
+
+    it('should return a 404 if trip not found on delete', async () => {
+      service.delete = jest
+        .fn()
+        .mockRejectedValue(new NotFoundException('Trip not found'));
+
+      const response = await request(app.getHttpServer())
+        .delete('/trips/1')
+        .expect(404);
+
+      expect(response.body.message).toBe('Trip with ID 1 not found.');
+    });
   });
 
-  it('should update a trip location', async () => {
-    const tripUpdateDto: Partial<Trip> = { location: 'Updated Location' };
-    const updatedTrip = { id: 'trip123', location: 'Updated Location' } as Trip;
+  describe('GET /trips/:id', () => {
+    it('should return a trip by id', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/trips/1')
+        .expect(200);
 
-    service.update.mockReturnValue(updatedTrip);
+      expect(response.body).toEqual(mockTrip);
+    });
 
-    const result = await controller.update('trip123', tripUpdateDto);
-    expect(result.location).toBe('Updated Location');
-    expect(service.update).toHaveBeenCalledWith('trip123', tripUpdateDto);
+    it('should return a 404 if trip not found', async () => {
+      service.findOne = jest
+        .fn()
+        .mockRejectedValue(new NotFoundException('Trip not found'));
+
+      const response = await request(app.getHttpServer())
+        .get('/trips/1')
+        .expect(404);
+
+      expect(response.body.message).toBe('Trip not found.');
+    });
   });
 
-  it('should find a trip by ID', async () => {
-    const trip = {
-      id: 'trip123',
-      boatId: 'boat123',
-      captainId: 'captain123',
-      ownerId: 'owner123',
-      startTime: new Date('2024-12-15T09:00:00.000Z'),
-      endTime: new Date('2024-12-15T12:00:00.000Z'),
-      status: 'PENDING',
-      location: 'Miami', // New field
-    } as Trip;
+  describe('DELETE /trips/:id', () => {
+    it('should delete a trip', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/trips/1')
+        .expect(200);
 
-    service.findOne.mockReturnValue(trip);
+      // Assuming deletion returns nothing, you can check for an empty response
+      expect(response.body).toEqual({});
+    });
 
-    const result = await controller.findOne('trip123');
-    expect(result.location).toBe('Miami');
-    expect(result).toEqual(trip);
-    expect(service.findOne).toHaveBeenCalledWith('trip123');
+    it('should return a 404 if trip not found', async () => {
+      service.delete = jest
+        .fn()
+        .mockRejectedValue(new NotFoundException('Trip not found'));
+
+      const response = await request(app.getHttpServer())
+        .delete('/trips/1')
+        .expect(404);
+
+      expect(response.body.message).toBe('Trip with ID 1 not found.');
+    });
   });
 
-  it('should list all trips', async () => {
-    const trips = [
-      {
-        id: 'trip1',
-        boatId: 'boat123',
-        captainId: 'captain123',
-        status: 'PENDING',
-        durationHours: 3,
-      },
-      {
-        id: 'trip2',
-        boatId: 'boat456',
-        captainId: 'captain456',
-        status: 'ONGOING',
-        durationHours: 2,
-      },
-    ] as Trip[];
-
-    service.list.mockReturnValue(trips);
-
-    const result = await controller.list();
-    expect(result).toEqual(trips);
-    expect(service.list).toHaveBeenCalled();
-  });
-
-  it('should update a trip', async () => {
-    const tripUpdateDto: Partial<Trip> = { status: 'ONGOING' };
-    const updatedTrip = { id: 'trip123', status: 'ONGOING' } as Trip;
-
-    service.update.mockReturnValue(updatedTrip);
-
-    const result = await controller.update('trip123', tripUpdateDto);
-    expect(result).toEqual(updatedTrip);
-    expect(service.update).toHaveBeenCalledWith('trip123', tripUpdateDto);
+  afterAll(async () => {
+    await app.close();
   });
 });

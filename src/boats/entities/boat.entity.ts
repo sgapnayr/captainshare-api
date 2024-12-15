@@ -8,8 +8,14 @@ export class Boat {
   captainShareCertificationsRequired: string[];
   ownerIds: string[];
   rateWillingToPay: number;
+  preferredCaptains?: string[];
   make: string;
   model: string;
   year: number;
   color: string;
+  hin?: string;
+  motorDetails?: string;
+  commercialUse: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

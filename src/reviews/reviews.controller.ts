@@ -6,6 +6,7 @@ import {
   Param,
   Body,
   NotFoundException,
+  Patch,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { Review } from './entities/review.entity';
@@ -46,5 +47,10 @@ export class ReviewsController {
       throw new NotFoundException(`No reviews found for User ID ${userId}`);
     }
     return reviews;
+  }
+
+  @Patch(':id/flag')
+  flagReview(@Param('id') id: string): Review {
+    return this.reviewsService.flagReview(id);
   }
 }

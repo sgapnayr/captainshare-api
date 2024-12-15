@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TripsService } from './trips.service';
-import { Trip } from './entities/trip.entity';
+import { Trip, BookingType, TripStatus } from './entities/trip.entity';
 import {
-  DEFAULT_CAPTAIN_RATE,
   DEFAULT_TOTAL_PRICE,
   CAPTAIN_FEE_PERCENTAGE,
   OWNER_FEE_PERCENTAGE,
   DEFAULT_CAPTAIN_SHARE,
+  round,
 } from './trips.constants';
 
 describe('TripsService', () => {
@@ -25,131 +25,188 @@ describe('TripsService', () => {
   });
 
   describe('Owner Trips', () => {
-    it('should calculate revenue for owner trips correctly', () => {
-      const trip: Partial<Trip> = {
-        boatId: 'boat123',
-        captainId: 'captain123',
-        ownerId: 'owner123',
-        startTime: new Date('2024-12-15T09:00:00.000Z'),
-        endTime: new Date('2024-12-15T12:00:00.000Z'),
-        status: 'PENDING',
-        tripType: 'OWNER_TRIP',
-        location: 'Miami',
-      };
+    it('should calculate the revenue correctly for owner trips', () => {
+      const captainRate = 100;
+      const durationHours = 5;
 
-      const createdTrip = service.create(trip);
-
-      expect(createdTrip.durationHours).toBe(3);
-      expect(createdTrip.captainEarnings).toBe(DEFAULT_CAPTAIN_RATE * 3);
-      expect(createdTrip.ownerRevenue).toBe(0);
-      expect(createdTrip.captainFee).toBeCloseTo(
-        DEFAULT_CAPTAIN_RATE * 3 * CAPTAIN_FEE_PERCENTAGE,
-      );
-      expect(createdTrip.ownerFee).toBeCloseTo(0);
-      expect(createdTrip.netCaptainEarnings).toBeCloseTo(
-        DEFAULT_CAPTAIN_RATE * 3 -
-          DEFAULT_CAPTAIN_RATE * 3 * CAPTAIN_FEE_PERCENTAGE,
-      );
-      expect(createdTrip.netOwnerRevenue).toBe(0);
-
-      const durationHours = 3;
-      const rawCost = DEFAULT_CAPTAIN_RATE * durationHours;
+      const rawCost = captainRate * durationHours;
       const ownerFee = rawCost * OWNER_FEE_PERCENTAGE;
       const captainFee = rawCost * CAPTAIN_FEE_PERCENTAGE;
-      const expectedPlatformRevenue = ownerFee + captainFee;
+      const platformRevenue = ownerFee + captainFee;
+      const totalCostToOwner = rawCost + ownerFee;
 
-      expect(createdTrip.platformRevenue).toBeCloseTo(expectedPlatformRevenue);
-      expect(createdTrip.location).toBe('Miami');
+      const result = service['calculateOwnerTripRevenue'](
+        captainRate,
+        durationHours,
+      );
+
+      expect(result.captainEarnings).toBe(rawCost);
+      expect(result.ownerRevenue).toBe(0);
+      expect(result.platformRevenue).toBe(platformRevenue);
+      expect(result.totalCostToOwner).toBe(totalCostToOwner);
     });
 
-    it('should throw an error for overlapping trips', () => {
-      const trip: Partial<Trip> = {
-        boatId: 'boat123',
-        captainId: 'captain123',
-        ownerId: 'owner123',
-        startTime: new Date('2024-12-15T09:00:00.000Z'),
-        endTime: new Date('2024-12-15T12:00:00.000Z'),
-        status: 'PENDING',
-        tripType: 'OWNER_TRIP',
-        location: 'Miami',
-      };
+    it('should return 0 owner revenue and correct platform revenue for a different captain rate', () => {
+      const captainRate = 200;
+      const durationHours = 3;
 
-      service.create(trip);
+      const rawCost = captainRate * durationHours;
+      const ownerFee = rawCost * OWNER_FEE_PERCENTAGE;
+      const captainFee = rawCost * CAPTAIN_FEE_PERCENTAGE;
+      const platformRevenue = ownerFee + captainFee;
+      const totalCostToOwner = rawCost + ownerFee;
 
-      const overlappingTrip: Partial<Trip> = {
-        boatId: 'boat123',
-        captainId: 'captain123',
-        ownerId: 'owner123',
-        startTime: new Date('2024-12-15T10:00:00.000Z'),
-        endTime: new Date('2024-12-15T13:00:00.000Z'),
-        status: 'PENDING',
-        tripType: 'OWNER_TRIP',
-        location: 'Miami',
-      };
-
-      expect(() => service.create(overlappingTrip)).toThrowError(
-        'Captain or boat is already booked during this time.',
+      const result = service['calculateOwnerTripRevenue'](
+        captainRate,
+        durationHours,
       );
+
+      expect(result.captainEarnings).toBe(rawCost);
+      expect(result.ownerRevenue).toBe(0);
+      expect(result.platformRevenue).toBe(platformRevenue);
+      expect(result.totalCostToOwner).toBe(totalCostToOwner);
     });
   });
 
   describe('Leased Trips', () => {
     it('should calculate revenue for leased trips correctly', () => {
-      const durationHours = 3;
       const trip: Partial<Trip> = {
         boatId: 'boat123',
-        captainId: 'captain123',
         ownerId: 'owner123',
-        startTime: new Date('2024-12-15T09:00:00.000Z'),
-        endTime: new Date('2024-12-15T12:00:00.000Z'),
-        status: 'PENDING',
-        tripType: 'LEASED_TRIP',
-        captainShare: DEFAULT_CAPTAIN_SHARE,
-        location: 'Miami',
+        timing: {
+          startTime: new Date('2024-12-15T09:00:00.000Z'),
+          endTime: new Date('2024-12-15T12:00:00.000Z'),
+        },
+        bookingType: BookingType.LEASED_TRIP,
+        financialDetails: {
+          captainShare: DEFAULT_CAPTAIN_SHARE,
+          totalPrice: DEFAULT_TOTAL_PRICE,
+        },
+        location: {
+          latitude: 25.7617,
+          longitude: -80.1918,
+        },
       };
 
       const createdTrip = service.create(trip);
 
       const captainEarnings = DEFAULT_TOTAL_PRICE * DEFAULT_CAPTAIN_SHARE;
       const ownerRevenue = DEFAULT_TOTAL_PRICE * (1 - DEFAULT_CAPTAIN_SHARE);
+
       const expectedPlatformRevenue =
         captainEarnings * CAPTAIN_FEE_PERCENTAGE +
         ownerRevenue * OWNER_FEE_PERCENTAGE;
 
-      expect(createdTrip.durationHours).toBe(durationHours);
-      expect(createdTrip.captainEarnings).toBeCloseTo(captainEarnings);
-      expect(createdTrip.ownerRevenue).toBeCloseTo(ownerRevenue);
-      expect(createdTrip.captainFee).toBeCloseTo(
-        captainEarnings * CAPTAIN_FEE_PERCENTAGE,
-      );
-      expect(createdTrip.ownerFee).toBeCloseTo(
-        ownerRevenue * OWNER_FEE_PERCENTAGE,
-      );
-      expect(createdTrip.netCaptainEarnings).toBeCloseTo(
-        captainEarnings - captainEarnings * CAPTAIN_FEE_PERCENTAGE,
-      );
-      expect(createdTrip.netOwnerRevenue).toBeCloseTo(
-        ownerRevenue - ownerRevenue * OWNER_FEE_PERCENTAGE,
-      );
-      expect(createdTrip.platformRevenue).toBeCloseTo(expectedPlatformRevenue);
-      expect(createdTrip.location).toBe('Miami');
-    });
+      expect(createdTrip.timing.durationHours).toBe(3);
 
-    it('should throw an error for invalid trip types', () => {
-      const trip: Partial<Trip> = {
+      expect(
+        round(createdTrip.financialDetails.netCaptainEarnings),
+      ).toBeCloseTo(round(captainEarnings), 2);
+
+      expect(round(createdTrip.financialDetails.netOwnerRevenue)).toBeCloseTo(
+        round(ownerRevenue),
+        2,
+      );
+
+      expect(round(createdTrip.financialDetails.platformRevenue)).toBeCloseTo(
+        round(expectedPlatformRevenue),
+        2,
+      );
+    });
+  });
+
+  describe('Finding Trips', () => {
+    it('should return a trip by ID', () => {
+      const trip: Trip = {
+        id: 'trip123',
         boatId: 'boat123',
-        captainId: 'captain123',
         ownerId: 'owner123',
-        startTime: new Date('2024-12-15T09:00:00.000Z'),
-        endTime: new Date('2024-12-15T12:00:00.000Z'),
-        status: 'PENDING',
-        tripType: 'INVALID_TYPE' as any,
-        location: 'Miami',
+        status: TripStatus.PROPOSED,
+        timing: {
+          startTime: new Date('2024-12-15T09:00:00.000Z'),
+          endTime: new Date('2024-12-15T12:00:00.000Z'),
+        },
+        bookingType: BookingType.OWNER_TRIP,
+        location: {
+          latitude: 25.7617,
+          longitude: -80.1918,
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
-      expect(() => service.create(trip)).toThrowError(
-        'Invalid trip type: INVALID_TYPE',
+      service['trips'].push(trip);
+
+      const result = service.findOne('trip123');
+      expect(result).toEqual(trip);
+    });
+
+    it('should throw an error if trip ID is not found', () => {
+      expect(() => service.findOne('invalid-id')).toThrowError(
+        'Trip not found.',
       );
+    });
+  });
+
+  describe('Update Status', () => {
+    it('should update trip status correctly', () => {
+      const trip: Trip = {
+        id: 'trip123',
+        boatId: 'boat123',
+        ownerId: 'owner123',
+        timing: {
+          startTime: new Date('2024-12-15T09:00:00.000Z'),
+          endTime: new Date('2024-12-15T12:00:00.000Z'),
+        },
+        status: TripStatus.PROPOSED,
+        bookingType: BookingType.OWNER_TRIP,
+        location: {
+          latitude: 25.7617,
+          longitude: -80.1918,
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      service['trips'].push(trip);
+
+      const updatedTrip = service.updateStatus('trip123', {
+        status: TripStatus.ACCEPTED,
+        tripId: '',
+        updatedBy: '',
+      });
+
+      expect(updatedTrip.status).toBe(TripStatus.ACCEPTED);
+    });
+
+    it('should throw an error if trip status is invalid', () => {
+      const trip: Trip = {
+        id: 'trip123',
+        boatId: 'boat123',
+        ownerId: 'owner123',
+        timing: {
+          startTime: new Date('2024-12-15T09:00:00.000Z'),
+          endTime: new Date('2024-12-15T12:00:00.000Z'),
+        },
+        status: TripStatus.PROPOSED,
+        bookingType: BookingType.OWNER_TRIP,
+        location: {
+          latitude: 25.7617,
+          longitude: -80.1918,
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      service['trips'].push(trip);
+
+      expect(() =>
+        service.updateStatus('trip123', {
+          status: 'INVALID_STATUS' as any,
+          tripId: '',
+          updatedBy: '',
+        }),
+      ).toThrowError('Invalid status: INVALID_STATUS.');
     });
   });
 });

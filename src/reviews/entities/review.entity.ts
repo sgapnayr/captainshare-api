@@ -6,5 +6,6 @@ export class Review {
   tripId: string;
   rating: number;
   comment: string;
+  isFlagged?: boolean;
   createdAt: Date;
 }

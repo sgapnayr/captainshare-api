@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BoatsController } from './boats.controller';
 import { BoatsService } from './boats.service';
 import { Boat } from './entities/boat.entity';
+import { CreateBoatDto } from './dto/create-boat.dto';
 
 describe('BoatsController', () => {
   let controller: BoatsController;
@@ -19,6 +20,7 @@ describe('BoatsController', () => {
             list: jest.fn(),
             delete: jest.fn(),
             filterByCaptain: jest.fn(),
+            updatePreferredCaptains: jest.fn(),
           },
         },
       ],
@@ -30,32 +32,43 @@ describe('BoatsController', () => {
     ) as jest.Mocked<BoatsService>;
   });
 
-  it('should create a boat', async () => {
-    const boatDto = {
+  it('should create a boat', () => {
+    const boatDto: CreateBoatDto = {
       name: 'Sea Breeze',
       type: 'Yacht',
       capacity: 10,
       location: 'Miami',
       licenseRequired: ['USCG'],
       captainShareCertificationsRequired: ['AdvancedSailing'],
-      ownerIds: ['owner123'],
       rateWillingToPay: 100,
       make: 'Yamaha',
       model: 'SX210',
       year: 2021,
       color: 'White',
+      commercialUse: false,
+      hin: undefined,
+      userRole: 'OWNER',
+      userId: 'owner123', // Ensure userId is set here
     };
 
-    const createdBoat: Boat = { ...boatDto, id: 'boat123' };
+    const createdBoat: Boat = {
+      ...boatDto,
+      id: 'boat123',
+      ownerIds: [boatDto.userId],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      commercialUse: false,
+    };
+
     service.create.mockReturnValue(createdBoat);
 
     const result = controller.create(boatDto);
     expect(result).toEqual(createdBoat);
-    expect(service.create).toHaveBeenCalledWith(boatDto);
+    expect(service.create).toHaveBeenCalledWith(boatDto.userId, boatDto);
   });
 
-  it('should get a boat by ID', async () => {
-    const boat = {
+  it('should get a boat by ID', () => {
+    const boat: Boat = {
       id: 'boat123',
       name: 'Sea Breeze',
       type: 'Yacht',
@@ -69,6 +82,9 @@ describe('BoatsController', () => {
       model: 'SX210',
       year: 2021,
       color: 'White',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      commercialUse: false,
     };
 
     service.findOne.mockReturnValue(boat);
@@ -78,37 +94,43 @@ describe('BoatsController', () => {
     expect(service.findOne).toHaveBeenCalledWith('boat123');
   });
 
-  it('should list all boats', async () => {
-    const boats = [
+  it('should list all boats', () => {
+    const boats: Boat[] = [
       {
         id: 'boat1',
-        name: 'Sea Breeze',
+        name: 'Boat 1',
         type: 'Yacht',
         capacity: 10,
         location: 'Miami',
         licenseRequired: ['USCG'],
         captainShareCertificationsRequired: ['AdvancedSailing'],
-        ownerIds: ['owner1'],
-        rateWillingToPay: 100,
+        rateWillingToPay: 150,
         make: 'Yamaha',
         model: 'SX210',
         year: 2021,
         color: 'White',
+        ownerIds: ['owner1'],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        commercialUse: false,
       },
       {
         id: 'boat2',
-        name: 'Ocean Explorer',
+        name: 'Boat 2',
         type: 'Fishing Boat',
         capacity: 6,
         location: 'San Diego',
-        licenseRequired: ['USCG', 'ProSailing'],
+        licenseRequired: ['USCG'],
         captainShareCertificationsRequired: ['ExpertSailing'],
-        ownerIds: ['owner2'],
-        rateWillingToPay: 150,
+        rateWillingToPay: 250,
         make: 'Boston Whaler',
         model: 'Montauk',
         year: 2020,
         color: 'Blue',
+        ownerIds: ['owner2'],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        commercialUse: false,
       },
     ];
 
@@ -119,36 +141,75 @@ describe('BoatsController', () => {
     expect(service.list).toHaveBeenCalled();
   });
 
-  it('should filter boats by captain qualifications', async () => {
-    const filterDto = {
-      certifications: ['AdvancedSailing'],
-      licenses: ['USCG'],
+  it('should delete a boat', () => {
+    const boatId = 'boat123';
+    const userId = 'owner123';
+    const boat: Boat = {
+      id: boatId,
+      name: 'Boat to Delete',
+      type: 'Fishing Boat',
+      capacity: 8,
+      location: 'Key West',
+      licenseRequired: ['USCG'],
+      captainShareCertificationsRequired: ['AdvancedSailing'],
+      ownerIds: [userId],
+      rateWillingToPay: 180,
+      make: 'Bayliner',
+      model: 'Element E18',
+      year: 2019,
+      color: 'Red',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      commercialUse: false,
     };
-    const boats = [
-      {
-        id: 'boat1',
-        name: 'Sea Breeze',
-        type: 'Yacht',
-        capacity: 10,
-        location: 'Miami',
-        licenseRequired: ['USCG'],
-        captainShareCertificationsRequired: ['AdvancedSailing'],
-        ownerIds: ['owner1'],
-        rateWillingToPay: 100,
-        make: 'Yamaha',
-        model: 'SX210',
-        year: 2021,
-        color: 'White',
-      },
-    ];
 
-    service.filterByCaptain.mockReturnValue(boats);
+    service.findOne.mockReturnValue(boat);
+    service.delete.mockReturnValue(true);
 
-    const result = await controller.filterByCaptain(filterDto);
-    expect(result).toEqual(boats);
-    expect(service.filterByCaptain).toHaveBeenCalledWith(
-      filterDto.certifications,
-      filterDto.licenses,
+    const result = controller.delete(boatId, userId);
+    expect(result).toBe(true);
+    expect(service.findOne).toHaveBeenCalledWith(boatId);
+    expect(service.delete).toHaveBeenCalledWith(boatId);
+  });
+
+  it('should update preferred captains for a boat', () => {
+    const boatId = 'boat123';
+    const captains = ['captain1', 'captain2'];
+    const userId = 'owner123';
+
+    const updatedBoat: Boat = {
+      id: boatId,
+      name: 'Sea Breeze',
+      type: 'Yacht',
+      capacity: 10,
+      location: 'Miami',
+      licenseRequired: ['USCG'],
+      captainShareCertificationsRequired: ['AdvancedSailing'],
+      ownerIds: [userId],
+      rateWillingToPay: 100,
+      make: 'Yamaha',
+      model: 'SX210',
+      year: 2021,
+      color: 'White',
+      preferredCaptains: captains,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      commercialUse: false,
+    };
+
+    service.findOne.mockReturnValue(updatedBoat);
+    service.updatePreferredCaptains.mockReturnValue(updatedBoat);
+
+    const result = controller.updatePreferredCaptains(boatId, {
+      captains,
+      userId,
+    });
+
+    expect(result).toEqual(updatedBoat);
+    expect(service.findOne).toHaveBeenCalledWith(boatId);
+    expect(service.updatePreferredCaptains).toHaveBeenCalledWith(
+      boatId,
+      captains,
     );
   });
 });

@@ -8,12 +8,15 @@ import {
   Param,
   Query,
   HttpCode,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AvailabilityDto } from './dto/availability.dto';
+import { FilterUsersDto } from './dto/filter-user.dto';
+import { PreferredCaptainsDto } from './dto/preferred-captains.dto';
 
 @Controller('users')
 export class UsersController {
@@ -42,15 +45,8 @@ export class UsersController {
   }
 
   @Get()
-  list(
-    @Query('role') role?: 'CAPTAIN' | 'OWNER',
-    @Query('isDeleted') isDeleted: string = 'false',
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-  ): User[] {
-    const filters: Partial<User> = {};
-    if (role) filters.roles = [role];
-    filters.isDeleted = isDeleted === 'true';
+  list(@Query() filterUsersDto: FilterUsersDto): User[] {
+    const { page = 1, limit = 10, ...filters } = filterUsersDto;
     return this.usersService.listWithPagination(filters, page, limit);
   }
 
@@ -65,16 +61,22 @@ export class UsersController {
   @Patch(':id/roles/add')
   addRole(
     @Param('id') id: string,
-    @Body('role') role: 'CAPTAIN' | 'OWNER',
+    @Body('role') role: 'CAPTAIN' | 'OWNER' | 'ADMIN',
   ): User {
+    if (!['CAPTAIN', 'OWNER', 'ADMIN'].includes(role)) {
+      throw new BadRequestException(`Invalid role: ${role}`);
+    }
     return this.usersService.addRole(id, role);
   }
 
   @Patch(':id/roles/remove')
   removeRole(
     @Param('id') id: string,
-    @Body('role') role: 'CAPTAIN' | 'OWNER',
+    @Body('role') role: 'CAPTAIN' | 'OWNER' | 'ADMIN',
   ): User {
+    if (!['CAPTAIN', 'OWNER', 'ADMIN'].includes(role)) {
+      throw new BadRequestException(`Invalid role: ${role}`);
+    }
     return this.usersService.removeRole(id, role);
   }
 
@@ -99,6 +101,31 @@ export class UsersController {
     @Param('id') id: string,
     @Body('ratePerHour') ratePerHour: number,
   ): User {
+    if (ratePerHour < 0) {
+      throw new BadRequestException('Rate per hour must be a positive number.');
+    }
     return this.usersService.update(id, { ratePerHour });
+  }
+
+  @Patch(':id/preferred-captains')
+  updatePreferredCaptains(
+    @Param('id') id: string,
+    @Body() preferredCaptainsDto: PreferredCaptainsDto,
+  ): User {
+    return this.usersService.updatePreferredCaptains(
+      id,
+      preferredCaptainsDto.captains,
+    );
+  }
+
+  @Post('captains/available')
+  queryCaptainsByAvailability(
+    @Body() availabilityDto: AvailabilityDto,
+  ): User[] {
+    return this.usersService.queryCaptainsByAvailability(
+      availabilityDto,
+      availabilityDto.certifications,
+      availabilityDto.rateRange,
+    );
   }
 }

@@ -1,28 +1,61 @@
+export enum TripStatus {
+  PROPOSED = 'PROPOSED',
+  ACCEPTED = 'ACCEPTED',
+  GROUP_ON = 'GROUP_ON',
+  COMPLETED = 'COMPLETED',
+  CANCELED = 'CANCELED',
+  REJECTED = 'REJECTED',
+}
+
+export enum BookingType {
+  OWNER_TRIP = 'OWNER_TRIP',
+  LEASED_TRIP = 'LEASED_TRIP',
+}
+
+export interface FinancialDetails {
+  totalPrice?: number;
+  captainRate?: number;
+  ownerShare?: number;
+  captainShare?: number;
+  totalCostToOwner?: number;
+
+  captainFee?: number;
+  ownerFee?: number;
+  netCaptainEarnings?: number;
+  netOwnerRevenue?: number;
+  platformRevenue?: number;
+}
+
+export interface Timing {
+  startTime?: Date;
+  endTime?: Date;
+  durationHours?: number;
+}
+
+export interface Location {
+  latitude: number;
+  longitude: number;
+  address?: string;
+}
+
 export interface Trip {
   id: string;
   boatId: string;
-  captainId: string;
+  captainId?: string;
   ownerId: string;
-  startTime: Date;
-  endTime: Date;
-  status: 'PENDING' | 'ONGOING' | 'COMPLETED' | 'CANCELED';
-  tripType: 'OWNER_TRIP' | 'LEASED_TRIP';
 
-  totalPrice?: number;
-  captainShare?: number;
-  ownerShare?: number;
+  status: TripStatus;
+  bookingType: BookingType;
 
-  totalCostToOwner?: number;
-  captainRate?: number;
+  financialDetails?: FinancialDetails;
+  timing?: Timing;
 
-  durationHours: number;
-  captainEarnings: number;
-  ownerRevenue: number;
-  captainFee: number;
-  ownerFee: number;
-  netCaptainEarnings: number;
-  netOwnerRevenue: number;
-  platformRevenue: number;
+  counterRate?: number;
+  cancellationReason?: string;
+  notes?: string;
 
-  location: string;
+  location?: Location;
+
+  createdAt: Date;
+  updatedAt: Date;
 }

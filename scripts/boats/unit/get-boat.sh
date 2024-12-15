@@ -1,11 +1,8 @@
 #!/bin/bash
+# Script to get a boat by ID
 
-BASE_URL="http://localhost:3000/boats"
+echo "=== Get Boat Details ==="
+read -p "Boat ID: " boatId
 
-echo "=== Get a Boat by ID ==="
-
-read -p "Enter boat ID: " id
-
-response=$(curl -s "$BASE_URL/$id")
-echo "Response:"
-echo "$response" | jq .
+curl -X GET http://localhost:3000/boats/"$boatId" \
+  -H "Content-Type: application/json" | jq .
