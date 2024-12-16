@@ -19,11 +19,12 @@ export class BoatsController {
 
   @Post()
   create(@Body() boatDto: CreateBoatDto): Boat {
-    const { userRole, userId } = boatDto;
+    // const { userRole, userId } = boatDto;
+    const { userId } = boatDto;
 
-    if (!['OWNER', 'ADMIN'].includes(userRole)) {
-      throw new ForbiddenException('Only owners or admins can create boats.');
-    }
+    // if (!['OWNER', 'ADMIN'].includes(userRole)) {
+    //   throw new ForbiddenException('Only owners or admins can create boats.');
+    // }
 
     return this.boatsService.create(userId, boatDto);
   }

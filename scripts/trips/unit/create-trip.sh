@@ -1,18 +1,24 @@
 #!/bin/bash
 
-# Prompt for user inputs (optional, for dynamic data)
-read -p "Enter Owner ID: " OWNER_ID
-read -p "Enter Boat ID: " BOAT_ID
-read -p "Enter Start Time (e.g., 2024-12-15T09:00:00.000Z): " START_TIME
-read -p "Enter End Time (e.g., 2024-12-15T13:00:00.000Z): " END_TIME
-read -p "Enter Latitude: " LATITUDE
-read -p "Enter Longitude: " LONGITUDE
-read -p "Enter Captain Rate (e.g., 55): " CAPTAIN_RATE
+# Hardcoded trip details
+OWNER_ID="123"
+BOAT_ID="123"
+START_TIME="2024-12-15T09:00:00.000Z"
+END_TIME="2024-12-15T13:00:00.000Z"
+LATITUDE=2
+LONGITUDE=1
+CAPTAIN_RATE=55
 
-# Calculate durationHours
-START_DATE=$(date -d "$START_TIME" +%s)
-END_DATE=$(date -d "$END_TIME" +%s)
-DURATION_HOURS=$(( (END_DATE - START_DATE) / 3600 ))
+# Calculate durationHours (4 hours in this case)
+DURATION_HOURS=4
+
+# Hardcoded financial calculations
+CAPTAIN_EARNINGS=$(($CAPTAIN_RATE * $DURATION_HOURS))
+CAPTAIN_FEE=$(($CAPTAIN_EARNINGS / 5))  # Example fee calculation
+OWNER_FEE=$(($CAPTAIN_EARNINGS / 10))   # Example fee calculation
+NET_CAPTAIN_EARNINGS=$(($CAPTAIN_EARNINGS - $CAPTAIN_FEE))
+PLATFORM_REVENUE=$(($CAPTAIN_FEE + $OWNER_FEE))
+TOTAL_COST_TO_OWNER=$(($CAPTAIN_EARNINGS + $OWNER_FEE))
 
 # Define the trip data payload
 TRIP_PAYLOAD=$(cat <<EOF
@@ -31,20 +37,20 @@ TRIP_PAYLOAD=$(cat <<EOF
   },
   "financialDetails": {
     "captainRate": $CAPTAIN_RATE,
-    "captainEarnings": $(($CAPTAIN_RATE * $DURATION_HOURS)),
+    "captainEarnings": $CAPTAIN_EARNINGS,
     "ownerRevenue": 0,
-    "captainFee": $(($CAPTAIN_RATE * $DURATION_HOURS / 5)),  # Example fee calculation
-    "ownerFee": $(($CAPTAIN_RATE * $DURATION_HOURS / 10)),  # Example fee calculation
-    "netCaptainEarnings": $(($CAPTAIN_RATE * $DURATION_HOURS - $CAPTAIN_RATE * $DURATION_HOURS / 5)),
+    "captainFee": $CAPTAIN_FEE,
+    "ownerFee": $OWNER_FEE,
+    "netCaptainEarnings": $NET_CAPTAIN_EARNINGS,
     "netOwnerRevenue": 0,
-    "platformRevenue": $(($CAPTAIN_RATE * $DURATION_HOURS / 5 + $CAPTAIN_RATE * $DURATION_HOURS / 10)),
-    "totalCostToOwner": $(($CAPTAIN_RATE * $DURATION_HOURS + $CAPTAIN_RATE * $DURATION_HOURS / 10))
+    "platformRevenue": $PLATFORM_REVENUE,
+    "totalCostToOwner": $TOTAL_COST_TO_OWNER
   }
 }
 EOF
 )
 
-# Make the POST request with the payload
+# Make the POST request with the hardcoded payload
 curl -X POST "http://localhost:3000/trips" \
   -H "Content-Type: application/json" \
   -d "$TRIP_PAYLOAD" | jq .

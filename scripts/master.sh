@@ -1,216 +1,256 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:3000"
-
-echo "=== Welcome to the Trip Management Workflow ==="
-
-# Step 1: Owner Sign-Up
-echo "=== Step 1: Owner Sign-Up ==="
-ownerPayload=$(
-  cat <<EOF
-{
-  "firstName": "OwnerFirstName",
-  "lastName": "OwnerLastName",
-  "email": "owner@example.com",
-  "phoneNumber": "1234567890",
-  "role": "OWNER",
-  "certifications": []
+# Function to pause and prompt user to continue
+pause(){
+  echo "Next, we will proceed to the next step."
+  read -p "Press any key to continue..."
 }
-EOF
-)
 
-ownerResponse=$(curl -s -X POST "$BASE_URL/users" \
--H "Content-Type: application/json" \
--d "$ownerPayload")
-ownerId=$(echo "$ownerResponse" | jq -r '.id')
+# Step 1: Create the owner.
+echo "This step we are simulating the creation of a boat owner in the system."
+read -p "Press any key to continue..."
 
-if [ "$ownerId" != "null" ]; then
-  echo "Owner Created Successfully (ID: $ownerId)"
-else
-  echo "Failed to Create Owner. Full Response:"
-  echo "$ownerResponse"
-  exit 1
-fi
-echo ""
+echo "Step 1: Sign up the owner (create owner)"
+OWNER_RESPONSE=$(curl -s -X POST "http://localhost:3000/users" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Brad",
+    "lastName": "Smith",
+    "email": "brad.smith@gmail.com",
+    "phoneNumber": "+123456789",
+    "roles": ["OWNER"],
+    "isGovernmentIdVerified": true,
+    "isEmailVerified": true,
+    "onboardingComplete": true,
+    "createdAt": "2024-12-14T00:00:00.000Z",
+    "updatedAt": "2024-12-14T00:00:00.000Z"
+  }')
 
-# Step 2: Captain Sign-Up
-echo "=== Step 2: Captain Sign-Up ==="
-captainPayload=$(
-  cat <<EOF
-{
-  "firstName": "CaptainFirstName",
-  "lastName": "CaptainLastName",
-  "email": "captain@example.com",
-  "phoneNumber": "0987654321",
-  "role": "CAPTAIN",
-  "ratePerHour": 75,
-  "certifications": ["SafetyTraining", "FirstAid"],
-  "availability": [
-    {
-      "day": "Monday",
-      "startTime": "09:00",
-      "endTime": "17:00"
+# Show the owner creation payload
+echo "Owner created:"
+echo "$OWNER_RESPONSE" | jq .
+
+# Extract the owner ID from the response
+OWNER_ID=$(echo "$OWNER_RESPONSE" | jq -r '.id')
+
+# Pause for user input
+pause
+
+echo "Owner ID extracted: $OWNER_ID"
+
+# Step 2: Post a boat for the owner.
+echo "This step we are simulating the creation of a boat for the owner."
+read -p "Press any key to continue..."
+
+echo "Step 2: Post a boat (create boat for owner)"
+BOAT_RESPONSE=$(curl -s -X POST "http://localhost:3000/boats" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ownerIds": ["'$OWNER_ID'"],
+    "name": "Mimosa",
+    "type": "Pontoon",
+    "capacity": 6,
+    "location": "Lake Austin",
+    "licenseRequired": ["MM", "PBO"],
+    "captainShareCertificationsRequired": ["Certification A", "Certification B"],
+    "rateWillingToPay": 55,
+    "make": "Bentley",
+    "model": "2018",
+    "year": 2018,
+    "color": "Maroon",
+    "hin": "BENT-2018-XYZ123",
+    "motorDetails": "140 HP",
+    "commercialUse": false,
+    "createdAt": "2024-12-14T00:00:00.000Z",
+    "updatedAt": "2024-12-14T00:00:00.000Z"
+  }')
+
+# Show the boat creation payload
+echo "Boat created:"
+echo "$BOAT_RESPONSE" | jq .
+
+# Extract boat ID from the response
+BOAT_ID=$(echo "$BOAT_RESPONSE" | jq -r '.id')
+
+# Pause for user input
+pause
+
+echo "Boat ID extracted: $BOAT_ID"
+
+# Step 3: Fetch available captains (simulated)
+echo "This step we are simulating the creation of 3 captains and fetching them."
+read -p "Press any key to continue..."
+
+# Generate 3 captains
+CAPTAIN_1=$(curl -s -X POST "http://localhost:3000/users" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Captain A",
+    "lastName": "Smith",
+    "email": "captainA@example.com",
+    "phoneNumber": "+1234567890",
+    "roles": ["CAPTAIN"],
+    "isGovernmentIdVerified": true,
+    "isEmailVerified": true,
+    "onboardingComplete": true,
+    "ratePerHour": 50,
+    "availability": [{"day": "Monday", "startTime": "09:00", "endTime": "12:00"}],
+    "certifications": ["Certification A"],
+    "createdAt": "2024-12-14T00:00:00.000Z",
+    "updatedAt": "2024-12-14T00:00:00.000Z"
+  }')
+
+CAPTAIN_2=$(curl -s -X POST "http://localhost:3000/users" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Captain B",
+    "lastName": "Johnson",
+    "email": "captainB@example.com",
+    "phoneNumber": "+1234567891",
+    "roles": ["CAPTAIN"],
+    "isGovernmentIdVerified": true,
+    "isEmailVerified": true,
+    "onboardingComplete": true,
+    "ratePerHour": 60,
+    "availability": [{"day": "Tuesday", "startTime": "10:00", "endTime": "14:00"}],
+    "certifications": ["Certification B"],
+    "createdAt": "2024-12-14T00:00:00.000Z",
+    "updatedAt": "2024-12-14T00:00:00.000Z"
+  }')
+
+CAPTAIN_3=$(curl -s -X POST "http://localhost:3000/users" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Captain C",
+    "lastName": "Williams",
+    "email": "captainC@example.com",
+    "phoneNumber": "+1234567892",
+    "roles": ["CAPTAIN"],
+    "isGovernmentIdVerified": true,
+    "isEmailVerified": true,
+    "onboardingComplete": true,
+    "ratePerHour": 55,
+    "availability": [{"day": "Wednesday", "startTime": "08:00", "endTime": "12:00"}],
+    "certifications": ["Certification C"],
+    "createdAt": "2024-12-14T00:00:00.000Z",
+    "updatedAt": "2024-12-14T00:00:00.000Z"
+  }')
+
+# Show the captains creation payloads
+echo "Captains created:"
+echo "$CAPTAIN_1" | jq .
+echo "$CAPTAIN_2" | jq .
+echo "$CAPTAIN_3" | jq .
+
+# Extract captain IDs from the response
+CAPTAIN_1_ID=$(echo "$CAPTAIN_1" | jq -r '.id')
+CAPTAIN_2_ID=$(echo "$CAPTAIN_2" | jq -r '.id')
+CAPTAIN_3_ID=$(echo "$CAPTAIN_3" | jq -r '.id')
+
+# Pause for user input
+pause
+
+echo "Captains IDs extracted: $CAPTAIN_1_ID, $CAPTAIN_2_ID, $CAPTAIN_3_ID"
+
+# Step 4: Select a captain
+echo "This step we are simulating selecting a captain for the trip."
+read -p "Press any key to continue..."
+
+# Choose a captain (hardcoded for simplicity)
+CHOSEN_CAPTAIN_ID=$CAPTAIN_2_ID
+echo "Chosen Captain: Captain B with rate \$60/hr"
+
+# Pause for user input
+pause
+
+# Step 5: Create a trip proposal
+echo "This step we are simulating creating a trip proposal."
+read -p "Press any key to continue..."
+
+# Create trip proposal
+TRIP_RESPONSE=$(curl -s -X POST "http://localhost:3000/trips" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ownerId": "'$OWNER_ID'",
+    "boatId": "'$BOAT_ID'",
+    "captainId": "'$CHOSEN_CAPTAIN_ID'",
+    "timing": {
+      "startTime": "2024-12-15T09:00:00.000Z",
+      "endTime": "2024-12-15T13:00:00.000Z",
+      "durationHours": 4
+    },
+    "bookingType": "OWNER_TRIP",
+    "location": {
+      "latitude": 25.7617,
+      "longitude": -80.1918
+    },
+    "financialDetails": {
+      "captainRate": 55,
+      "captainEarnings": 220,
+      "ownerRevenue": 0,
+      "captainFee": 44,
+      "ownerFee": 22,
+      "netCaptainEarnings": 176,
+      "netOwnerRevenue": 0,
+      "platformRevenue": 66,
+      "totalCostToOwner": 242
     }
-  ],
-  "userLocation": "Miami"
-}
-EOF
-)
+  }')
 
-captainResponse=$(curl -s -X POST "$BASE_URL/users" \
--H "Content-Type: application/json" \
--d "$captainPayload")
-captainId=$(echo "$captainResponse" | jq -r '.id')
+# Show the trip creation payload
+echo "Trip proposal created:"
+echo "$TRIP_RESPONSE" | jq .
 
-if [ "$captainId" != "null" ]; then
-  echo "Captain Created Successfully (ID: $captainId)"
-else
-  echo "Failed to Create Captain."
-  exit 1
-fi
-echo ""
+# Extract trip ID from response
+TRIP_ID=$(echo "$TRIP_RESPONSE" | jq -r '.id')
 
-# Step 3: Owner Posts a Boat
-echo "=== Step 3: Owner Posts a Boat ==="
-boatPayload=$(
-  cat <<EOF
-{
-  "name": "Fishing Boat",
-  "type": "Fishing",
-  "capacity": 6,
-  "location": "Miami",
-  "licenseRequired": ["USCG"],
-  "captainShareCertificationsRequired": ["SafetyTraining"],
-  "ownerIds": ["$ownerId"],
-  "rateWillingToPay": 100,
-  "make": "Yamaha",
-  "model": "FX Cruiser",
-  "year": 2021,
-  "color": "Blue"
-}
-EOF
-)
+# Pause for user input
+pause
 
-boatResponse=$(curl -s -X POST "$BASE_URL/boats" \
--H "Content-Type: application/json" \
--d "$boatPayload")
-boatId=$(echo "$boatResponse" | jq -r '.id')
+# Step 6: Captain accepts the trip (simulated)
+echo "This step we are simulating a captain accepting a trip 'ACCEPTED'."
+read -p "Press any key to continue..."
 
-if [ "$boatId" != "null" ]; then
-  echo "Boat Posted Successfully (ID: $boatId)"
-else
-  echo "Failed to Post Boat. Full Response:"
-  echo "$boatResponse" | jq .
-  exit 1
-fi
-echo ""
+# Update trip status to 'ACCEPTED'
+TRIP_ACCEPTED_RESPONSE=$(curl -s -X PATCH "http://localhost:3000/trips/$TRIP_ID/status" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "ACCEPTED"
+  }')
 
-# Step 4: List Captains in the Location
-echo "=== Step 4: List Captains in the Location ==="
-filterPayload=$(
-  cat <<EOF
-{
-  "captainCertifications": ["SafetyTraining"],
-  "captainLicenses": ["USCG"],
-  "location": "Miami"
-}
-EOF
-)
+# Show the updated trip status
+echo "Trip status updated to 'ACCEPTED':"
+echo "$TRIP_ACCEPTED_RESPONSE" | jq .
 
-captainsListResponse=$(curl -s -X POST "$BASE_URL/boats/filter" \
--H "Content-Type: application/json" \
--d "$filterPayload")
-echo "Available Captains in Location (Formatted):"
-echo "$captainsListResponse" | jq .
-echo ""
+# Pause for user input
+pause
 
-# Step 5: Assign Captain to Boat and Create a Trip
-echo "=== Step 5: Assign Captain to Boat and Create a Trip ==="
-tripPayload=$(
-  cat <<EOF
-{
-  "name": "Fishing Adventure",
-  "tripType": "OWNER_TRIP",
-  "durationHours": 4,
-  "captainRate": 75,
-  "ownerId": "$ownerId",
-  "captainId": "$captainId",
-  "location": "Miami",
-  "boatId": "$boatId"
-}
-EOF
-)
+# Step 7: Update trip status to 'COMPLETED'
+echo "This step we are simulating updating the trip status to 'COMPLETED'."
+read -p "Press any key to continue..."
 
-tripResponse=$(curl -s -X POST "$BASE_URL/trips" \
--H "Content-Type: application/json" \
--d "$tripPayload")
-tripId=$(echo "$tripResponse" | jq -r '.id')
+# Update trip status to 'COMPLETED'
+TRIP_COMPLETED_RESPONSE=$(curl -s -X PATCH "http://localhost:3000/trips/$TRIP_ID/status" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "COMPLETED"
+  }')
 
-if [ "$tripId" != "null" ]; then
-  echo "Trip Created Successfully (ID: $tripId)"
-else
-  echo "Failed to Create Trip."
-  exit 1
-fi
-echo ""
+# Show the updated trip status
+echo "Trip status updated to 'COMPLETED':"
+echo "$TRIP_COMPLETED_RESPONSE" | jq .
 
-# Step 6: Update Trip to Ongoing
-echo "=== Step 6: Update Trip to Ongoing ==="
-updateToOngoingPayload='{"status": "ONGOING"}'
+# Pause for user input
+pause
 
-updateOngoingResponse=$(curl -s -X PATCH "$BASE_URL/trips/$tripId" \
--H "Content-Type: application/json" \
--d "$updateToOngoingPayload")
-echo "Trip Updated to Ongoing:"
-echo "$updateOngoingResponse" | jq .
-echo ""
+# Step 8: Display financial details of the trip
+echo "This step we are simulating displaying the financial details for the trip."
+read -p "Press any key to continue..."
 
-# Step 7: Update Trip to Completed
-echo "=== Step 7: Update Trip to Completed ==="
-updateToCompletedPayload='{"status": "COMPLETED"}'
+# Fetch and display financial details for the trip
+TRIP_DETAILS=$(curl -s -X GET "http://localhost:3000/trips/$TRIP_ID")
+echo "Trip financial details:"
+echo "$TRIP_DETAILS" | jq .
 
-updateCompletedResponse=$(curl -s -X PATCH "$BASE_URL/trips/$tripId" \
--H "Content-Type: application/json" \
--d "$updateToCompletedPayload")
-echo "Trip Updated to Completed:"
-echo "$updateCompletedResponse" | jq .
-echo ""
-
-# Step 8: Leave a Review
-echo "=== Step 8: Leave a Review ==="
-reviewPayload=$(
-  cat <<EOF
-{
-  "tripId": "$tripId",
-  "reviewerId": "$ownerId",
-  "rating": 5,
-  "comments": "Great experience with the captain and the trip!"
-}
-EOF
-)
-
-reviewResponse=$(curl -s -X POST "$BASE_URL/reviews" \
--H "Content-Type: application/json" \
--d "$reviewPayload")
-echo "Review Submitted:"
-echo "$reviewResponse" | jq .
-echo ""
-
-# Step 9: Revenue Sharing
-echo "=== Step 9: Revenue Sharing ==="
-revenuePayload=$(
-  cat <<EOF
-{
-  "tripId": "$tripId"
-}
-EOF
-)
-
-revenueResponse=$(curl -s -X POST "$BASE_URL/revenue/share" \
--H "Content-Type: application/json" \
--d "$revenuePayload")
-echo "Revenue Shared:"
-echo "$revenueResponse" | jq .
-echo ""
-
-echo "=== Workflow Completed Successfully ==="
+# Process complete
+echo "Process complete."
